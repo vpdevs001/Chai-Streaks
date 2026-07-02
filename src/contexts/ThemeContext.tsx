@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { getTheme, setTheme, type AppTheme } from '../db/preferences';
 import { Colors, type ColorScheme, type ThemeColors } from '../theme';
+import { getTheme, setTheme, type AppTheme } from '../db/preferences';
 
 interface ThemeContextValue {
   scheme: ColorScheme;

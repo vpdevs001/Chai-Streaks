@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View, Text, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
 function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
@@ -55,21 +55,8 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  emoji: {
-    fontSize: 22,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 2,
-  },
+  wrapper: { alignItems: 'center', gap: 2 },
+  emoji: { fontSize: 22 },
+  label: { fontSize: 10, fontWeight: '600' },
+  dot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
 });

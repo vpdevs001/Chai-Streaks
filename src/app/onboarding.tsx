@@ -1,18 +1,18 @@
-import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+  Platform,
 } from 'react-native';
-import { RADII, SPACING, TYPOGRAPHY } from '../constants';
+import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { setOnboarded } from '../db';
+import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 
 const { width } = Dimensions.get('window');
 
@@ -174,10 +174,7 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-
+  root: { flex: 1 },
   slide: {
     flex: 1,
     alignItems: 'center',
@@ -185,7 +182,6 @@ const styles = StyleSheet.create({
     padding: SPACING['2xl'],
     gap: SPACING.lg,
   },
-
   blob: {
     position: 'absolute',
     width: 320,
@@ -194,7 +190,6 @@ const styles = StyleSheet.create({
     top: -60,
     opacity: 0.6,
   },
-
   emojiCircle: {
     width: 120,
     height: 120,
@@ -204,11 +199,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-
-  emojiLarge: {
-    fontSize: 56,
-  },
-
+  emojiLarge: { fontSize: 56 },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -219,80 +210,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: SPACING.md,
   },
-
-  streakBadgeText: {
-    fontSize: 40,
-  },
-
-  streakNum: {
-    fontSize: TYPOGRAPHY['3xl'],
-    fontWeight: TYPOGRAPHY.heavy,
-    lineHeight: 40,
-  },
-
-  streakLabel: {
-    fontSize: TYPOGRAPHY.base,
-    fontWeight: TYPOGRAPHY.medium,
-  },
-
+  streakBadgeText: { fontSize: 40 },
+  streakNum: { fontSize: TYPOGRAPHY['3xl'], fontWeight: TYPOGRAPHY.heavy, lineHeight: 40 },
+  streakLabel: { fontSize: TYPOGRAPHY.base, fontWeight: TYPOGRAPHY.medium },
   title: {
     fontSize: TYPOGRAPHY['2xl'],
     fontWeight: TYPOGRAPHY.heavy,
     textAlign: 'center',
     lineHeight: 36,
   },
-
   subtitle: {
     fontSize: TYPOGRAPHY.md,
     textAlign: 'center',
     lineHeight: 26,
     fontWeight: TYPOGRAPHY.medium,
   },
-
-  dots: {
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-    paddingBottom: SPACING.lg,
-  },
-
-  dot: {
-    height: 6,
-    width: 6,
-    borderRadius: 3,
-  },
-
+  dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', paddingBottom: SPACING.lg },
+  dot: { height: 6, width: 6, borderRadius: 3 },
   bottom: {
     paddingHorizontal: SPACING['2xl'],
     paddingBottom: Platform.OS === 'ios' ? 48 : SPACING['2xl'],
   },
-
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  skip: {
-    fontSize: TYPOGRAPHY.base,
-    fontWeight: TYPOGRAPHY.medium,
-    padding: SPACING.sm,
-  },
-
+  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  skip: { fontSize: TYPOGRAPHY.base, fontWeight: TYPOGRAPHY.medium, padding: SPACING.sm },
   btn: {
     paddingVertical: SPACING.base,
     paddingHorizontal: SPACING['2xl'],
     borderRadius: RADII.full,
     alignItems: 'center',
   },
-
-  btnSmall: {
-    paddingHorizontal: SPACING.xl,
-  },
-
-  btnText: {
-    color: '#FFF',
-    fontSize: TYPOGRAPHY.md,
-    fontWeight: TYPOGRAPHY.bold,
-  },
+  btnSmall: { paddingHorizontal: SPACING.xl },
+  btnText: { color: '#FFF', fontSize: TYPOGRAPHY.md, fontWeight: TYPOGRAPHY.bold },
 });

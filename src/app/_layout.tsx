@@ -1,11 +1,11 @@
+import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
-import { hasOnboarded, migrateDatabase } from '../db';
+import { migrateDatabase, hasOnboarded } from '../db';
 
 function AppGate() {
   const { colors, scheme } = useTheme();
