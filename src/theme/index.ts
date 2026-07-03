@@ -46,7 +46,9 @@ export const Colors = {
 } as const;
 
 export type ColorScheme = 'dark' | 'light';
-export type ThemeColors = typeof Colors.dark;
+export type ThemeColors = {
+  [K in keyof typeof Colors.dark]: string;
+};
 
 // ─── habit color presets ─────────────────────────────────────────────────────
 
@@ -79,7 +81,6 @@ export const PRESET_ICONS = [
   '🎯',
   '🎨',
   '🎵',
-  '🧹',
   '💊',
   '🧠',
   '🌿',

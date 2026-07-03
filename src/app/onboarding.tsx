@@ -10,6 +10,7 @@ import {
   Text,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import OnboardingSlide from '../components/OnboardingSlide';
 import { RADII, SLIDES, SPACING, TYPOGRAPHY } from '../constants';
 import { useTheme } from '../contexts/ThemeContext';
@@ -51,7 +52,7 @@ export default function Onboarding() {
   const slide = SLIDES[current];
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -109,7 +110,7 @@ export default function Onboarding() {
           </View>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

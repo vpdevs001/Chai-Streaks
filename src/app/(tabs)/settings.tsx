@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { resetOnboarding } from '../../db';
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
     label: string;
     destructive?: boolean;
   } | null>(null);
+  const [showThemePicker, setShowThemePicker] = useState(false);
 
   const handleConfirm = async () => {
     if (!dialog) return;
@@ -27,7 +29,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -38,8 +40,13 @@ export default function SettingsScreen() {
         {/* Appearance */}
         <SettingsSectionHeader title="Appearance" />
         <View style={styles.group}>
-          <View
-            style={[styles.themeRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.themeRow,
+              { backgroundColor: colors.card, borderColor: colors.border },
+              { opacity: pressed ? 0.8 : 1 }
+            ]}
+            onPress={() => setShowThemePicker(!showThemePicker)}
           >
             <View style={[styles.rowIcon, { backgroundColor: colors.primary + '18' }]}>
               <Text style={styles.rowEmoji}>🎨</Text>
@@ -50,10 +57,12 @@ export default function SettingsScreen() {
                 Choose your colour mode
               </Text>
             </View>
-          </View>
-          <View style={[styles.themePickerWrap, { borderColor: colors.border }]}>
-            <ThemePicker />
-          </View>
+          </Pressable>
+          {showThemePicker && (
+            <View style={[styles.themePickerWrap, { borderColor: colors.border, backgroundColor: colors.card }]}>
+              <ThemePicker />
+            </View>
+          )}
         </View>
 
         {/* Notifications */}
@@ -136,7 +145,7 @@ export default function SettingsScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <ConfirmDialog
+        <ConfirmDialog
         visible={!!dialog}
         title={dialog?.title ?? ''}
         message={dialog?.message ?? ''}
@@ -145,7 +154,7 @@ export default function SettingsScreen() {
         onConfirm={handleConfirm}
         onCancel={() => setDialog(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -190,6 +199,7 @@ const styles = StyleSheet.create({
 
   themePickerWrap: {
     paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
     paddingBottom: SPACING.md,
     borderTopWidth: StyleSheet.hairlineWidth
   },

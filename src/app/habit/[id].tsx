@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -138,10 +139,11 @@ export default function EditHabitScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <View style={[styles.root, { backgroundColor: colors.background }]}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -315,7 +317,8 @@ export default function EditHabitScreen() {
         />
       </View>
     </KeyboardAvoidingView>
-  );
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({
