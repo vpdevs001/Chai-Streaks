@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
-import { resetOnboarding, resetAllData, clearActiveUserId } from '../../db';
+import { resetOnboarding, resetAllData, clearActiveUserId, ensureActiveUser, getUserById } from '../../db';
+import type { User } from '../../db/types';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import SettingsSectionHeader from '../../components/SettingsSectionHeader';
 import SettingsRow from '../../components/SettingsRow';
 import ThemePicker from '../../components/ThemePicker';
+import ProfileCard from '../../components/ProfileCard';
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
   const db = useSQLiteContext();
+  const [user, setUser] = useState<User | null>(null);
   const [dialog, setDialog] = useState<{
     key: string;
     title: string;
@@ -23,6 +26,19 @@ export default function SettingsScreen() {
   } | null>(null);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [resetting, setResetting] = useState(false);
+
+  const loadUser = useCallback(async () => {
+    const uid = await ensureActiveUser(db);
+    const u = await getUserById(db, uid);
+    setUser(u);
+  }, [db]);
+
+  // Refresh user data each time the settings tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+    }, [loadUser])
+  );
 
   const handleConfirm = async () => {
     if (!dialog) return;
@@ -53,6 +69,10 @@ export default function SettingsScreen() {
           <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
           <Text style={[styles.sub, { color: colors.textSecondary }]}>ChaiStreaks</Text>
         </View>
+
+        {/* ── Profile section ────────────────────────────────────────────── */}
+        <SettingsSectionHeader title="Profile" />
+        {user && <ProfileCard user={user} onUserUpdated={setUser} />}
 
         {/* Appearance */}
         <SettingsSectionHeader title="Appearance" />
@@ -165,7 +185,7 @@ export default function SettingsScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-        <ConfirmDialog
+      <ConfirmDialog
         visible={!!dialog}
         title={dialog?.title ?? ''}
         message={dialog?.message ?? ''}

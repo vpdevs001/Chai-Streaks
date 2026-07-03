@@ -5,10 +5,11 @@ import {
   markHabitCompleted,
   deleteHistoryForDate,
   getHistoryForDate,
-  ensureActiveUser
+  ensureActiveUser,
+  getUserById
 } from '../db';
 import { isReleasedDbError } from '../db/utils';
-import type { HabitWithStreak, HabitHistory } from '../db/types';
+import type { HabitWithStreak, HabitHistory, User } from '../db/types';
 import { todayString } from '../utils/dateHelpers';
 
 export function useHabits() {
@@ -16,6 +17,7 @@ export function useHabits() {
   const [habits, setHabits] = useState<HabitWithStreak[]>([]);
   const [todayHistory, setTodayHistory] = useState<Record<number, HabitHistory>>({});
   const [userId, setUserId] = useState<number | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Guards against setState after unmount, and lets us tell whether a
@@ -36,6 +38,10 @@ export function useHabits() {
       const uid = await ensureActiveUser(db);
       if (!isMounted.current) return;
       setUserId(uid);
+
+      const u = await getUserById(db, uid);
+      if (!isMounted.current) return;
+      setUser(u);
 
       const h = await getHabitsWithStreaks(db, uid);
       if (!isMounted.current) return;
@@ -109,6 +115,7 @@ export function useHabits() {
   return {
     habits,
     userId,
+    user,
     loading,
     refresh,
     toggleHabit,

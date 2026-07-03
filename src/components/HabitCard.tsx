@@ -50,63 +50,62 @@ export default function HabitCard({
   const accentColor = habit.color ?? colors.primary;
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(380).delay(index * 55)}
-      style={cardStyle}
-    >
-      <Pressable
-        onPress={onPress}
-        style={[
-          styles.habitCard,
-          {
-            backgroundColor: completed ? colors.cardActive : colors.card,
-            borderColor: completed ? accentColor : colors.border,
-            borderWidth: completed ? 1.5 : StyleSheet.hairlineWidth,
-            opacity: completed ? 0.75 : 1
-          }
-        ]}
-      >
-        {/* icon + name */}
-        <View style={[styles.habitIconWrap, { backgroundColor: accentColor + '22' }]}>
-          <Text style={styles.habitIcon}>{habit.icon ?? '✨'}</Text>
-        </View>
-        <View style={styles.habitMeta}>
-          <Text
-            style={[styles.habitTitle, { color: colors.text }, completed && styles.habitTitleDone]}
-            numberOfLines={1}
-          >
-            {habit.title}
-          </Text>
-          <View style={styles.habitSubRow}>
-            {habit.current_streak > 0 && (
-              <Text style={[styles.streakBadge, { color: '#EF4444' }]}>
-                🔥 {habit.current_streak}d
-              </Text>
-            )}
-            <Text style={[styles.freqTag, { color: colors.textMuted }]}>
-              {habit.frequency_type}
-            </Text>
-          </View>
-        </View>
-
-        {/* done button */}
+    <Animated.View entering={FadeInDown.duration(380).delay(index * 55)}>
+      <Animated.View style={cardStyle}>
         <Pressable
-          onPress={handleToggle}
-          style={({ pressed }) => [
-            styles.checkBtn,
+          onPress={onPress}
+          style={[
+            styles.habitCard,
             {
-              backgroundColor: completed ? accentColor : colors.inputBg,
+              backgroundColor: completed ? colors.cardActive : colors.card,
               borderColor: completed ? accentColor : colors.border,
-              opacity: pressed ? 0.8 : 1
+              borderWidth: completed ? 1.5 : StyleSheet.hairlineWidth,
+              opacity: completed ? 0.75 : 1
             }
           ]}
-          hitSlop={8}
         >
-          <Animated.Text style={[styles.checkIcon, { color: completed ? '#fff' : colors.textMuted }, checkStyle]}>
-            {completed ? '✓' : '○'}
-          </Animated.Text>
+          {/* icon + name */}
+          <View style={[styles.habitIconWrap, { backgroundColor: accentColor + '22' }]}>
+            <Text style={styles.habitIcon}>{habit.icon ?? '✨'}</Text>
+          </View>
+          <View style={styles.habitMeta}>
+            <Text
+              style={[styles.habitTitle, { color: colors.text }, completed && styles.habitTitleDone]}
+              numberOfLines={1}
+            >
+              {habit.title}
+            </Text>
+            <View style={styles.habitSubRow}>
+              {habit.current_streak > 0 && (
+                <Text style={[styles.streakBadge, { color: '#EF4444' }]}>
+                  🔥 {habit.current_streak}d
+                </Text>
+              )}
+              <Text style={[styles.freqTag, { color: colors.textMuted }]}>
+                {habit.frequency_type}
+              </Text>
+            </View>
+          </View>
+
+          {/* done button */}
+          <Pressable
+            onPress={handleToggle}
+            style={({ pressed }) => [
+              styles.checkBtn,
+              {
+                backgroundColor: completed ? accentColor : colors.inputBg,
+                borderColor: completed ? accentColor : colors.border,
+                opacity: pressed ? 0.8 : 1
+              }
+            ]}
+            hitSlop={8}
+          >
+            <Animated.Text style={[styles.checkIcon, { color: completed ? '#fff' : colors.textMuted }, checkStyle]}>
+              {completed ? '✓' : '○'}
+            </Animated.Text>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 }

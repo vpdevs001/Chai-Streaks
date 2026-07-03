@@ -24,7 +24,7 @@ import EmptyHabits from '../../components/EmptyHabits';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { habits, loading, refresh, toggleHabit, isCompleted, completedCount, completionRate } =
+  const { habits, user, loading, refresh, toggleHabit, isCompleted, completedCount, completionRate } =
     useHabits();
 
   useFocusEffect(
@@ -60,7 +60,7 @@ export default function HomeScreen() {
 
   const listHeader = (
     <>
-      <HomeHeader colors={colors} />
+      <HomeHeader colors={colors} user={user} />
 
       <TodayProgressCard
         colors={colors}
