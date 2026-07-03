@@ -126,10 +126,11 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={listHeader}
         ListEmptyComponent={<EmptyHabits onAdd={() => router.push('/habit/create')} />}
-        renderItem={({ item: habit }) => (
+        renderItem={({ item: habit, index }) => (
           <HabitCard
             habit={habit}
             completed={isCompleted(habit.id)}
+            index={index}
             onToggle={() => toggleHabit(habit.id)}
             onPress={() => router.push(`/habit/${habit.id}`)}
           />

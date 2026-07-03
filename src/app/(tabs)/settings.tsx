@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
-import { resetOnboarding } from '../../db';
+import { resetOnboarding, resetAllData, clearActiveUserId } from '../../db';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import SettingsSectionHeader from '../../components/SettingsSectionHeader';
 import SettingsRow from '../../components/SettingsRow';
@@ -11,6 +13,7 @@ import ThemePicker from '../../components/ThemePicker';
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
+  const db = useSQLiteContext();
   const [dialog, setDialog] = useState<{
     key: string;
     title: string;
@@ -19,11 +22,25 @@ export default function SettingsScreen() {
     destructive?: boolean;
   } | null>(null);
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const handleConfirm = async () => {
     if (!dialog) return;
     if (dialog.key === 'reset') {
-      await resetOnboarding();
+      setResetting(true);
+      try {
+        // Wipe the actual SQLite data (users → cascades to habits + history),
+        // then clear the AsyncStorage-backed preferences that point at the
+        // now-deleted user, so nothing tries to keep using a stale id.
+        await resetAllData(db);
+        await clearActiveUserId();
+        await resetOnboarding();
+        setDialog(null);
+        router.replace('/onboarding');
+        return;
+      } finally {
+        setResetting(false);
+      }
     }
     setDialog(null);
   };
@@ -105,17 +122,20 @@ export default function SettingsScreen() {
           <SettingsRow
             emoji="🗑️"
             label="Reset All Data"
-            sublabel="Delete all habits and history"
+            sublabel={resetting ? 'Resetting…' : 'Delete all habits and history'}
             danger
-            onPress={() =>
-              setDialog({
-                key: 'reset',
-                title: 'Reset Everything?',
-                message:
-                  'This will delete all your habits, streaks, and history. This action cannot be undone.',
-                label: 'Yes, reset',
-                destructive: true
-              })
+            onPress={
+              resetting
+                ? undefined
+                : () =>
+                    setDialog({
+                      key: 'reset',
+                      title: 'Reset Everything?',
+                      message:
+                        'This will delete all your habits, streaks, and history. This action cannot be undone.',
+                      label: 'Yes, reset',
+                      destructive: true
+                    })
             }
           />
         </View>

@@ -16,7 +16,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { HABIT_COLORS } from '../../theme';
-import { createHabit, getActiveUserId, createUser, getAllUsers, setActiveUserId } from '../../db';
+import { createHabit, ensureActiveUser } from '../../db';
 import type { FrequencyType } from '../../db/types';
 import Section from '../../components/Section';
 import Label from '../../components/Label';
@@ -42,19 +42,6 @@ export default function CreateHabitScreen() {
     setSelectedDays((prev) => (prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i]));
   };
 
-  const ensureUser = async () => {
-    let uid = await getActiveUserId();
-    if (uid !== null) return uid;
-    const users = await getAllUsers(db);
-    if (users.length > 0) {
-      await setActiveUserId(users[0].id);
-      return users[0].id;
-    }
-    const u = await createUser(db, { name: 'You' });
-    await setActiveUserId(u.id);
-    return u.id;
-  };
-
   const handleSave = async () => {
     if (!title.trim()) {
       setError('Please enter a habit name');
@@ -67,7 +54,7 @@ export default function CreateHabitScreen() {
     setSaving(true);
     setError('');
     try {
-      const uid = await ensureUser();
+      const uid = await ensureActiveUser(db);
       await createHabit(db, {
         user_id: uid,
         title: title.trim(),
