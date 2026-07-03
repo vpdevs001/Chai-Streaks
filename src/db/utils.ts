@@ -77,6 +77,23 @@ export function decodeDays(json: string | null | undefined): number[] {
   return safeJsonParse<number[]>(json, []);
 }
 
+// ─── Native SQLite lifecycle helpers ─────────────────────────────────────────
+
+/**
+ * True if an error came from calling a query against a NativeDatabase that
+ * has already been released/closed (e.g. expo-sqlite's SQLiteProvider
+ * re-establishing its connection while an older query was still in flight —
+ * see https://github.com/expo/expo/issues/37169). This can happen during
+ * Fast Refresh in development, or briefly during navigation transitions.
+ *
+ * Screens/hooks can catch this specific error and just skip the update
+ * instead of crashing, since a fresh refresh will follow shortly after.
+ */
+export function isReleasedDbError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /already released|shared object/i.test(message);
+}
+
 // ─── SQL helpers ──────────────────────────────────────────────────────────────
 
 // Mirrors expo-sqlite's SQLiteBindValue: the only primitives SQLite accepts.

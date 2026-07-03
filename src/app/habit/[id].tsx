@@ -17,6 +17,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { HABIT_COLORS } from '../../theme';
 import { getHabitById, updateHabit, archiveHabit, deleteHabit } from '../../db';
+import { isReleasedDbError } from '../../db/utils';
 import type { Habit, FrequencyType } from '../../db/types';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Section from '../../components/Section';
@@ -48,20 +49,36 @@ export default function EditHabitScreen() {
   const [reminderTime, setReminderTime] = useState('');
 
   useEffect(() => {
-    getHabitById(db, habitId).then((h) => {
-      if (h) {
-        setHabit(h);
-        setTitle(h.title);
-        setDescription(h.description ?? '');
-        setIcon(h.icon ?? '🎯');
-        setColor(h.color ?? HABIT_COLORS[0]);
-        setFrequency(h.frequency_type);
-        setSelectedDays(JSON.parse(h.frequency_days || '[]'));
-        setTargetCount(h.target_count);
-        setReminderTime(h.reminder_time ?? '');
-      }
-      setLoading(false);
-    });
+    // This screen is a modal that can be dismissed (router.back()) before
+    // the fetch resolves — guard against setting state after that happens,
+    // and against the native db connection being torn down mid-flight.
+    let isActive = true;
+
+    getHabitById(db, habitId)
+      .then((h) => {
+        if (!isActive) return;
+        if (h) {
+          setHabit(h);
+          setTitle(h.title);
+          setDescription(h.description ?? '');
+          setIcon(h.icon ?? '🎯');
+          setColor(h.color ?? HABIT_COLORS[0]);
+          setFrequency(h.frequency_type);
+          setSelectedDays(JSON.parse(h.frequency_days || '[]'));
+          setTargetCount(h.target_count);
+          setReminderTime(h.reminder_time ?? '');
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!isActive) return;
+        if (!isReleasedDbError(err)) throw err;
+        setLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [habitId, db]);
 
   const toggleDay = (i: number) =>

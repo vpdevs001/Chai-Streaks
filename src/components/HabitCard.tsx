@@ -1,5 +1,12 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import type { HabitWithStreak } from '../db/types';
@@ -7,34 +14,46 @@ import type { HabitWithStreak } from '../db/types';
 export default function HabitCard({
   habit,
   completed,
+  index = 0,
   onToggle,
   onPress
 }: {
   habit: HabitWithStreak;
   completed: boolean;
+  index?: number;
   onToggle: () => void;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
+  const checkScale = useSharedValue(completed ? 1 : 0.85);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
+
+  const checkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkScale.value }]
+  }));
 
   const handleToggle = () => {
-    Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 0.93, duration: 80, useNativeDriver: true }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        damping: 12,
-        stiffness: 300
-      })
-    ]).start();
+    scale.value = withSpring(0.93, { damping: 14, stiffness: 300 }, () => {
+      scale.value = withSpring(1, { damping: 12, stiffness: 260 });
+    });
+    checkScale.value = withSpring(1.15, { damping: 8, stiffness: 300 }, () => {
+      checkScale.value = withSpring(1, { damping: 10, stiffness: 260 });
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onToggle();
   };
 
   const accentColor = habit.color ?? colors.primary;
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+    <Animated.View
+      entering={FadeInDown.duration(380).delay(index * 55)}
+      style={cardStyle}
+    >
       <Pressable
         onPress={onPress}
         style={[
@@ -83,9 +102,9 @@ export default function HabitCard({
           ]}
           hitSlop={8}
         >
-          <Text style={[styles.checkIcon, { color: completed ? '#fff' : colors.textMuted }]}>
+          <Animated.Text style={[styles.checkIcon, { color: completed ? '#fff' : colors.textMuted }, checkStyle]}>
             {completed ? '✓' : '○'}
-          </Text>
+          </Animated.Text>
         </Pressable>
       </Pressable>
     </Animated.View>

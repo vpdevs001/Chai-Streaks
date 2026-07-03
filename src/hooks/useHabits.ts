@@ -1,16 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import {
   getHabitsWithStreaks,
   markHabitCompleted,
   deleteHistoryForDate,
   getHistoryForDate,
-  getActiveUserId,
-  createUser,
-  getActiveHabits,
-  setActiveUserId,
-  getAllUsers
+  ensureActiveUser
 } from '../db';
+import { isReleasedDbError } from '../db/utils';
 import type { HabitWithStreak, HabitHistory } from '../db/types';
 import { todayString } from '../utils/dateHelpers';
 
@@ -21,30 +18,29 @@ export function useHabits() {
   const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const ensureUser = useCallback(async (): Promise<number> => {
-    let uid = await getActiveUserId();
-    if (uid !== null) {
-      setUserId(uid);
-      return uid;
-    }
-    const users = await getAllUsers(db);
-    if (users.length > 0) {
-      await setActiveUserId(users[0].id);
-      setUserId(users[0].id);
-      return users[0].id;
-    }
-    const newUser = await createUser(db, { name: 'You' });
-    await setActiveUserId(newUser.id);
-    setUserId(newUser.id);
-    return newUser.id;
-  }, [db]);
+  // Guards against setState after unmount, and lets us tell whether a
+  // "database already released" error (see db/utils.ts) happened after
+  // this screen went away — in which case it's safe to just ignore it,
+  // since nothing is listening for the result anymore.
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    if (isMounted.current) setLoading(true);
     try {
-      const uid = await ensureUser();
-      const [h] = await Promise.all([getHabitsWithStreaks(db, uid)]);
+      const uid = await ensureActiveUser(db);
+      if (!isMounted.current) return;
+      setUserId(uid);
+
+      const h = await getHabitsWithStreaks(db, uid);
+      if (!isMounted.current) return;
       setHabits(h);
+
       // load today's history for each habit
       const today = todayString();
       const histMap: Record<number, HabitHistory> = {};
@@ -54,11 +50,18 @@ export function useHabits() {
           if (hist) histMap[habit.id] = hist;
         })
       );
+      if (!isMounted.current) return;
       setTodayHistory(histMap);
+    } catch (err) {
+      // The native db connection can momentarily be torn down/reopened
+      // (Fast Refresh, or a fast navigation transition) while a query is
+      // still in flight. In that case just skip this refresh — the next
+      // effect run / focus event will retry against the live connection.
+      if (!isReleasedDbError(err)) throw err;
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
-  }, [db, ensureUser]);
+  }, [db]);
 
   useEffect(() => {
     refresh();
@@ -67,23 +70,30 @@ export function useHabits() {
   const toggleHabit = useCallback(
     async (habitId: number) => {
       if (!userId) return;
-      const today = todayString();
-      const existing = todayHistory[habitId];
-      if (existing && existing.status === 'completed') {
-        // un-complete
-        await deleteHistoryForDate(db, habitId, today);
-        setTodayHistory((prev) => {
-          const next = { ...prev };
-          delete next[habitId];
-          return next;
-        });
-      } else {
-        const hist = await markHabitCompleted(db, habitId, userId);
-        setTodayHistory((prev) => ({ ...prev, [habitId]: hist }));
+      try {
+        const today = todayString();
+        const existing = todayHistory[habitId];
+        if (existing && existing.status === 'completed') {
+          // un-complete
+          await deleteHistoryForDate(db, habitId, today);
+          if (!isMounted.current) return;
+          setTodayHistory((prev) => {
+            const next = { ...prev };
+            delete next[habitId];
+            return next;
+          });
+        } else {
+          const hist = await markHabitCompleted(db, habitId, userId);
+          if (!isMounted.current) return;
+          setTodayHistory((prev) => ({ ...prev, [habitId]: hist }));
+        }
+        // refresh streaks
+        const updated = await getHabitsWithStreaks(db, userId);
+        if (!isMounted.current) return;
+        setHabits(updated);
+      } catch (err) {
+        if (!isReleasedDbError(err)) throw err;
       }
-      // refresh streaks
-      const updated = await getHabitsWithStreaks(db, userId);
-      setHabits(updated);
     },
     [db, userId, todayHistory]
   );

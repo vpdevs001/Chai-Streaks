@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import React, { useRef, useState } from 'react';
 import {
   Animated,
@@ -12,16 +13,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import OnboardingSlide from '../components/OnboardingSlide';
+import OnboardingProfileStep from '../components/OnboardingProfileSetup';
 import { RADII, SLIDES, SPACING, TYPOGRAPHY } from '../constants';
 import { useTheme } from '../contexts/ThemeContext';
-import { setOnboarded } from '../db';
+import { setOnboarded, createUser, setActiveUserId } from '../db';
 
 const { width } = Dimensions.get('window');
 
 export default function Onboarding() {
   const { colors } = useTheme();
+  const db = useSQLiteContext();
   const scrollRef = useRef<ScrollView>(null);
   const [current, setCurrent] = useState(0);
+  const [step, setStep] = useState<'slides' | 'profile'>('slides');
   const streakAnim = useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -44,12 +48,31 @@ export default function Onboarding() {
     }
   };
 
-  const finish = async () => {
+  // Slides are just the marketing intro — the profile step (name + avatar)
+  // is a separate screen shown after them so it doesn't have to fit into
+  // the horizontal slide pager's layout.
+  const goToProfile = () => setStep('profile');
+
+  const completeOnboarding = async (name: string, avatarUri: string | null) => {
+    const user = await createUser(db, { name, avatar_uri: avatarUri ?? undefined });
+    await setActiveUserId(user.id);
     await setOnboarded();
     router.replace('/(tabs)/home');
   };
 
   const slide = SLIDES[current];
+
+  if (step === 'profile') {
+    return (
+      <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
+        <OnboardingProfileStep
+          colors={colors}
+          onComplete={completeOnboarding}
+          onSkip={() => completeOnboarding('You', null)}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
@@ -88,13 +111,16 @@ export default function Onboarding() {
               styles.btn,
               { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }
             ]}
-            onPress={finish}
+            onPress={goToProfile}
           >
             <Text style={styles.btnText}>Start Building Habits ☕</Text>
           </Pressable>
         ) : (
           <View style={styles.navRow}>
-            <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]} onPress={finish}>
+            <Pressable
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              onPress={goToProfile}
+            >
               <Text style={[styles.skip, { color: colors.textMuted }]}>Skip</Text>
             </Pressable>
             <Pressable

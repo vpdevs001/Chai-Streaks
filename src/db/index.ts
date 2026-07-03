@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Schema / migration
-export { migrateDatabase } from './schema';
+export { migrateDatabase, resetAllData } from './schema';
 
 // Types & constants
 export * from './types';
@@ -15,7 +15,14 @@ export * from './types';
 export * from './utils';
 
 // User CRUD
-export { createUser, getUserById, getAllUsers, updateUser, deleteUser } from './userMethods';
+export {
+  createUser,
+  getUserById,
+  getAllUsers,
+  updateUser,
+  deleteUser,
+  ensureActiveUser
+} from './userMethods';
 
 // Habit CRUD
 export {

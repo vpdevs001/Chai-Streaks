@@ -155,3 +155,21 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     console.log(`[DB] Applied migration: ${migration.name} → v${nextVersion}`);
   }
 }
+
+// ─── Full data reset ──────────────────────────────────────────────────────────
+
+/**
+ * Wipes every row from every table (users, habits, habit_history) while
+ * keeping the schema intact. Relies on the ON DELETE CASCADE foreign keys
+ * defined in CREATE_HABITS_TABLE / CREATE_HABIT_HISTORY_TABLE, so deleting
+ * from `users` is enough to cascade-delete everything else.
+ *
+ * Note: this only clears SQLite data. Callers are responsible for also
+ * clearing the AsyncStorage-backed preferences (active user id, onboarding
+ * flag) via db/preferences so the app doesn't think a deleted user is still
+ * active.
+ */
+export async function resetAllData(db: SQLiteDatabase): Promise<void> {
+  await db.execAsync('PRAGMA foreign_keys = ON;');
+  await db.execAsync('DELETE FROM users;');
+}

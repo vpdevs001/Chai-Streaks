@@ -82,35 +82,53 @@ export async function getHabitsWithStreaks(
 ): Promise<HabitWithStreak[]> {
   const habits = await getActiveHabits(db, userId);
 
-  const enriched: HabitWithStreak[] = [];
+  if (habits.length === 0) return [];
 
-  for (const habit of habits) {
-    // Fetch all completed dates for this habit
-    const rows = await db.getAllAsync<{ date: string }>(
-      `SELECT date FROM habit_history
-       WHERE habit_id = ? AND status = 'completed'
-       ORDER BY date ASC`,
-      [habit.id]
-    );
+  const habitIds = habits.map((h) => h.id);
+  const placeholders = habitIds.map(() => '?').join(', ');
 
-    const dates = rows.map((r) => r.date);
+  // Query 1: every completed date for every active habit, in one round trip.
+  const dateRows = await db.getAllAsync<{ habit_id: number; date: string }>(
+    `SELECT habit_id, date FROM habit_history
+     WHERE habit_id IN (${placeholders}) AND status = 'completed'
+     ORDER BY habit_id ASC, date ASC`,
+    habitIds
+  );
+
+  // Query 2: total completions per habit, in one round trip.
+  const countRows = await db.getAllAsync<{ habit_id: number; total: number }>(
+    `SELECT habit_id, COUNT(*) AS total FROM habit_history
+     WHERE habit_id IN (${placeholders}) AND status = 'completed'
+     GROUP BY habit_id`,
+    habitIds
+  );
+
+  // Group dates by habit_id
+  const datesByHabit = new Map<number, string[]>();
+  for (const row of dateRows) {
+    const arr = datesByHabit.get(row.habit_id);
+    if (arr) arr.push(row.date);
+    else datesByHabit.set(row.habit_id, [row.date]);
+  }
+
+  // Map counts by habit_id
+  const countByHabit = new Map<number, number>();
+  for (const row of countRows) {
+    countByHabit.set(row.habit_id, row.total);
+  }
+
+  // Compute streaks in JS (no DB calls in this loop)
+  return habits.map((habit) => {
+    const dates = datesByHabit.get(habit.id) ?? [];
     const { currentStreak, longestStreak } = computeStreaks(dates);
 
-    const countRow = await db.getFirstAsync<{ total: number }>(
-      `SELECT COUNT(*) AS total FROM habit_history
-       WHERE habit_id = ? AND status = 'completed'`,
-      [habit.id]
-    );
-
-    enriched.push({
+    return {
       ...habit,
       current_streak: currentStreak,
       longest_streak: longestStreak,
-      total_completions: countRow?.total ?? 0
-    });
-  }
-
-  return enriched;
+      total_completions: countByHabit.get(habit.id) ?? 0
+    };
+  });
 }
 
 /** Fetch habits that have an enabled reminder (used by notification scheduler). */
