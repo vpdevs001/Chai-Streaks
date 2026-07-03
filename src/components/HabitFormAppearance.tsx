@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import { HABIT_COLORS, PRESET_ICONS } from '../theme';
 import type { ThemeColors } from '../theme';
@@ -24,14 +24,14 @@ export default function HabitFormAppearance({
   return (
     <Section title="Appearance" colors={colors}>
       <Label label="Icon" colors={colors} />
-      <ScrollView
+      <FlatList
         horizontal
+        data={PRESET_ICONS}
+        keyExtractor={(ic) => ic}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.iconRow}
-      >
-        {PRESET_ICONS.map((ic) => (
+        renderItem={({ item: ic }) => (
           <Pressable
-            key={ic}
             style={({ pressed }) => [
               styles.iconBtn,
               {
@@ -44,8 +44,8 @@ export default function HabitFormAppearance({
           >
             <Text style={styles.iconBtnText}>{ic}</Text>
           </Pressable>
-        ))}
-      </ScrollView>
+        )}
+      />
 
       <Label label="Color" colors={colors} />
       <View style={styles.colorGrid}>

@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   Animated,
   Platform,
   RefreshControl,
@@ -57,85 +57,85 @@ export default function HomeScreen() {
     );
   }
 
+  const listHeader = (
+    <>
+      <HomeHeader colors={colors} />
+
+      <TodayProgressCard
+        colors={colors}
+        completedCount={completedCount}
+        totalCount={habits.length}
+        completionRate={completionRate}
+      />
+
+      {/* Stats row */}
+      <View style={styles.statsRow}>
+        <StatCard
+          emoji="🔥"
+          label="Streak"
+          value={`${maxStreak}d`}
+          color="#EF4444"
+          bg={colors.card}
+        />
+        <StatCard
+          emoji="🏆"
+          label="Best"
+          value={`${bestStreak}d`}
+          color={colors.primary}
+          bg={colors.card}
+        />
+        <StatCard
+          emoji="☕"
+          label="Chai Score"
+          value={chaiScore}
+          color="#F59E0B"
+          bg={colors.card}
+        />
+      </View>
+
+      {/* Habits section header */}
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Habits</Text>
+        <Pressable
+          onPress={() => router.push('/habit/create')}
+          style={({ pressed }) => [
+            styles.addBtn,
+            {
+              backgroundColor: colors.primary + '22',
+              borderColor: colors.primary + '44',
+              opacity: pressed ? 0.7 : 1
+            }
+          ]}
+        >
+          <Text style={[styles.addBtnText, { color: colors.primary }]}>+ Add</Text>
+        </Pressable>
+      </View>
+    </>
+  );
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView
+      <FlatList
+        data={habits}
+        keyExtractor={(habit) => String(habit.id)}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primary} />
         }
-      >
-        <HomeHeader colors={colors} />
-
-        <TodayProgressCard
-          colors={colors}
-          completedCount={completedCount}
-          totalCount={habits.length}
-          completionRate={completionRate}
-        />
-
-        {/* Stats row */}
-        <View style={styles.statsRow}>
-          <StatCard
-            emoji="🔥"
-            label="Streak"
-            value={`${maxStreak}d`}
-            color="#EF4444"
-            bg={colors.card}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={<EmptyHabits onAdd={() => router.push('/habit/create')} />}
+        renderItem={({ item: habit }) => (
+          <HabitCard
+            habit={habit}
+            completed={isCompleted(habit.id)}
+            onToggle={() => toggleHabit(habit.id)}
+            onPress={() => router.push(`/habit/${habit.id}`)}
           />
-          <StatCard
-            emoji="🏆"
-            label="Best"
-            value={`${bestStreak}d`}
-            color={colors.primary}
-            bg={colors.card}
-          />
-          <StatCard
-            emoji="☕"
-            label="Chai Score"
-            value={chaiScore}
-            color="#F59E0B"
-            bg={colors.card}
-          />
-        </View>
-
-        {/* Habits section */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Habits</Text>
-          <Pressable
-            onPress={() => router.push('/habit/create')}
-            style={({ pressed }) => [
-              styles.addBtn,
-              {
-                backgroundColor: colors.primary + '22',
-                borderColor: colors.primary + '44',
-                opacity: pressed ? 0.7 : 1
-              }
-            ]}
-          >
-            <Text style={[styles.addBtnText, { color: colors.primary }]}>+ Add</Text>
-          </Pressable>
-        </View>
-
-        {habits.length === 0 ? (
-          <EmptyHabits onAdd={() => router.push('/habit/create')} />
-        ) : (
-          <View style={styles.habitList}>
-            {habits.map((habit) => (
-              <HabitCard
-                key={habit.id}
-                habit={habit}
-                completed={isCompleted(habit.id)}
-                onToggle={() => toggleHabit(habit.id)}
-                onPress={() => router.push(`/habit/${habit.id}`)}
-              />
-            ))}
-          </View>
         )}
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
+        ItemSeparatorComponent={() => <View style={{ height: SPACING.sm }} />}
+        ListFooterComponent={<View style={{ height: 100 }} />}
+      />
 
       {/* FAB */}
       <Animated.View style={[styles.fab, { transform: [{ scale: fabAnim }] }]}>
@@ -196,9 +196,7 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.semibold
   },
 
-  habitList: {
-    gap: SPACING.sm
-  },
+
 
   fab: {
     position: 'absolute',

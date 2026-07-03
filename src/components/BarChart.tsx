@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { SPACING, TYPOGRAPHY } from '../constants';
 import { shortDayLabel, shortMonthDay } from '../utils/dateHelpers';
@@ -8,13 +8,14 @@ import type { DayBar } from '../hooks/useStats';
 const { width } = Dimensions.get('window');
 const CHART_H = 160;
 const BAR_GAP = 4;
+const BAR_W_30 = 32;
 
 export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '30' }) {
   const { colors } = useTheme();
   const barW =
     mode === '7'
       ? (width - SPACING.base * 2 - SPACING.lg * 2 - BAR_GAP * 6) / 7
-      : Math.max(6, (width - SPACING.base * 2 - SPACING.lg * 2 - BAR_GAP * 29) / 30);
+      : BAR_W_30;
 
   return (
     <View style={styles.chartWrap}>
@@ -26,14 +27,21 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
         />
       ))}
 
-      <View style={styles.barsRow}>
-        {bars.map((bar, i) => {
+      <FlatList
+        data={bars}
+        keyExtractor={(bar) => bar.date}
+        horizontal
+        scrollEnabled={mode === '30'}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.barsRow}
+        ItemSeparatorComponent={() => <View style={{ width: BAR_GAP }} />}
+        renderItem={({ item: bar, index: i }) => {
           const fillH = bar.total > 0 ? (bar.count / bar.total) * CHART_H : 0;
           const isToday = i === bars.length - 1;
           const isEmpty = bar.count === 0;
 
           return (
-            <View key={bar.date} style={[styles.barCol, { width: barW, gap: BAR_GAP / 2 }]}>
+            <View style={[styles.barCol, { width: barW, gap: BAR_GAP / 2 }]}>
               {/* count label on top for 7-day */}
               {mode === '7' && bar.count > 0 && (
                 <Text style={[styles.barCountLabel, { color: colors.textSecondary }]}>
@@ -85,8 +93,8 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
               )}
             </View>
           );
-        })}
-      </View>
+        }}
+      />
     </View>
   );
 }

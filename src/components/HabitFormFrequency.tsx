@@ -31,6 +31,7 @@ export default function HabitFormFrequency({
 }: Props) {
   return (
     <Section title="Frequency" colors={colors}>
+
       <View style={styles.freqRow}>
         {(['daily', 'weekly', 'custom'] as FrequencyType[]).map((f) => (
           <Pressable
