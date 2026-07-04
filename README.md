@@ -1,6 +1,15 @@
-# Welcome to your Expo app 👋
+# ChaiStreaks ☕
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A habit-tracking app built with Expo Router + SQLite. "Build habits one cup of chai at a time."
+
+## Status: MVP (habits + streaks + analytics). Notifications not yet implemented.
+
+This project is being built against a two-part plan:
+
+1. `IMPLEMENTATION-PLAN.md` — the core app (habits, streaks, theming, progress screens). **Done.**
+2. A notifications PRD (local reminders + push, deep linking, permissions) — **not started.**
+
+See [Feature Checklist](#feature-checklist) below for exactly what's implemented vs. outstanding.
 
 ## Get started
 
@@ -21,36 +30,68 @@ In the output, you'll find options to open the app in a
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [Expo Go](https://expo.dev/go) — note: **push notifications will not work in Expo Go**; a dev build is required once notifications land (see below).
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+This project uses [file-based routing](https://docs.expo.dev/router/introduction) via `src/app`.
 
-## Get a fresh project
+## Feature checklist
 
-When you're ready, run:
+### ✅ Built
 
-```bash
-npm run reset-project
-```
+- Habit CRUD — create, edit, archive, delete (`src/db/habitMethods.ts`, `src/app/habit/create.tsx`, `src/app/habit/[id].tsx`)
+- Habit fields: title, description, emoji/icon, color, frequency (`daily` / `weekly` / `custom`), target count
+- SQLite persistence, survives app restart (`expo-sqlite`, `src/db/`)
+- Mark-done + streak logic — current streak and longest streak computed from completion history (`computeStreaks()` in `habitMethods.ts`)
+- Progress/analytics — 7/30/all-time bar charts, completion %, "Chai Score" (`src/app/(tabs)/progress.tsx`, `src/utils/chaiScore.ts`)
+- Onboarding flow, theme system (system/light/dark), settings shell
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 🚧 Not yet built — Notifications (local + push)
 
-### Other setup steps
+None of the notification requirements are implemented yet. Specifically missing:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- **Local reminders**: no scheduling call on habit save/edit/delete (no `expo-notifications` usage anywhere in `src/`)
+- **Notification ID persistence**: `habits.notification_id` is a single column today; the notification PRD needs an array of IDs per habit (multiple weekly reminder times)
+- **Cancel/reschedule on edit**, **cancel-only-this-habit on delete**
+- **Foreground notification handler** (`Notifications.setNotificationHandler`)
+- **Android notification channel** (high-importance, created before permission request)
+- **Permission flow**: Settings currently shows "Habit Reminders — Coming soon" as a placeholder; no request/denied-state UI or "open system settings" link
+- **Deep linking**: tapping a notification does not route to `/habit/[id]` yet
+- **Push notifications**: no registration, no Expo Push Token display/copy UI, no Push tab, no dev-build push testing flow
+- Planned module layout (not present yet): `src/lib/notifications/{setup,schedule,push}.ts`, exposed through `src/hooks/use-push-notifications.ts`
+
+### 🎁 Stretch goals
+
+| Goal                                        | Status       |
+| ------------------------------------------- | ------------ |
+| Habit analytics                             | ✅ Built     |
+| Calendar-style streak view                  | ❌ Not built |
+| Snooze action                               | ❌ Not built |
+| iOS action buttons (Done / Snooze)          | ❌ Not built |
+| App badge (pending habits)                  | ❌ Not built |
+| Image push notification                     | ❌ Not built |
+| Node push server (`expo-server-sdk`)        | ❌ Not built |
+| Push receipts handling                      | ❌ Not built |
+| Drop invalid tokens (`DeviceNotRegistered`) | ❌ Not built |
+| Quiet hours / do-not-disturb window         | ❌ Not built |
+| Daily summary push                          | ❌ Not built |
+
+## Architecture notes
+
+Current structure (`src/`) differs slightly from the notifications PRD's suggested layout — habit logic lives in `src/db/` (SQLite-backed) rather than `src/lib/habits/`. When notifications are implemented, plan to add a new `src/lib/notifications/` module and a `use-push-notifications` hook rather than restructuring the existing habit code.
+
+## Other setup steps
+
+- ESLint: `npx expo lint`, or see ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
+- Unit testing: see ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
+- TypeScript: see ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
 
 ## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- [Expo documentation](https://docs.expo.dev/)
+- [Expo Notifications docs (v55)](https://docs.expo.dev/versions/v55.0.0/sdk/notifications/) — required reading before implementing the notifications feature
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/)
 
 ## Join the community
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Expo on GitHub](https://github.com/expo/expo)
+- [Discord community](https://chat.expo.dev)
