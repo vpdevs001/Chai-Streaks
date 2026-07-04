@@ -23,6 +23,7 @@ import Section from '../../components/Section';
 import Label from '../../components/Label';
 import HabitFormAppearance from '../../components/HabitFormAppearance';
 import HabitFormFrequency from '../../components/HabitFormFrequency';
+import ReminderTimePicker from '../../components/ReminderTimePicker';
 
 export default function CreateHabitScreen() {
   const { colors } = useTheme();
@@ -186,23 +187,7 @@ export default function CreateHabitScreen() {
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>
-              <Label label="Reminder Time (HH:MM — optional)" colors={colors} />
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.border,
-                    color: colors.text
-                  }
-                ]}
-                placeholder="e.g. 07:30  (notifications coming soon)"
-                placeholderTextColor={colors.textMuted}
-                value={reminderTime}
-                onChangeText={setReminderTime}
-                keyboardType="numbers-and-punctuation"
-                maxLength={5}
-              />
+              <ReminderTimePicker value={reminderTime} onChange={setReminderTime} />
             </Section>
 
             {error ? (

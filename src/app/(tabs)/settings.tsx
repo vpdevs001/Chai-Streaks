@@ -12,8 +12,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../../contexts/ThemeContext';
+
+let Clipboard: any = null;
+try {
+  Clipboard = require('expo-clipboard');
+} catch (e) {
+  // Safe fallback if native module is not built/linked
+}
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import {
   resetOnboarding,
@@ -31,6 +37,7 @@ import SettingsRow from '../../components/SettingsRow';
 import ThemePicker from '../../components/ThemePicker';
 import ProfileCard from '../../components/ProfileCard';
 import { useNotifications } from '../../hooks/useNotifications';
+import { reconcileHabitReminders } from '../../lib/notifications/schedule';
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
@@ -88,11 +95,25 @@ export default function SettingsScreen() {
     await setPreference('@habit_tracker/quiet_hours_end', val);
   };
 
+  const handleEnableReminders = async () => {
+    const status = await requestPermission();
+    // Permission was just granted — reschedule any habit whose reminder
+    // couldn't be scheduled earlier (created/edited while permission was
+    // still undetermined/denied), instead of leaving it silently un-set.
+    if (status === 'granted' && user) {
+      await reconcileHabitReminders(db, user.id);
+    }
+  };
+
   const handleCopyToken = async () => {
     if (pushToken) {
-      await Clipboard.setStringAsync(pushToken);
-      setCopiedToken(true);
-      setTimeout(() => setCopiedToken(false), 2000);
+      if (Clipboard?.setStringAsync) {
+        await Clipboard.setStringAsync(pushToken);
+        setCopiedToken(true);
+        setTimeout(() => setCopiedToken(false), 2000);
+      } else {
+        console.warn('Clipboard is not available');
+      }
     }
   };
 
@@ -187,7 +208,7 @@ export default function SettingsScreen() {
               permission === 'denied'
                 ? openNotificationSettings
                 : permission === 'undetermined'
-                  ? requestPermission
+                  ? handleEnableReminders
                   : undefined
             }
           />

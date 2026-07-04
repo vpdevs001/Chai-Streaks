@@ -1,8 +1,9 @@
 import * as Notifications from 'expo-notifications';
+import { type SQLiteDatabase } from 'expo-sqlite';
 import { type Habit } from '../../db/types';
 import { parseReminderTime } from '../../db/utils';
-import { getPreference } from '../../db/preferences';
-import { getNotificationPermission } from '../../db/preferences';
+import { getPreference, getNotificationPermission } from '../../db/preferences';
+import { getHabitsWithReminders, setHabitNotificationId } from '../../db/habitMethods';
 
 // JSON-encode scheduled notification IDs
 export function encodeIds(ids: string[]): string {
@@ -149,4 +150,30 @@ export async function cancelHabitReminders(habit: Habit): Promise<void> {
 export async function rescheduleHabitReminders(habit: Habit): Promise<string[]> {
   await cancelHabitReminders(habit);
   return scheduleHabitReminders(habit);
+}
+
+/**
+ * Re-schedules reminders for every habit that has `reminder_status = 'enabled'`
+ * but doesn't have anything on the OS calendar yet (e.g. permission was
+ * granted after those habits were created/edited, so `scheduleHabitReminders`
+ * silently no-op'd at the time). Call this right after permission flips to
+ * 'granted' (see `useNotifications().requestPermission`) and, defensively,
+ * once on app boot in case the user granted permission from system Settings
+ * while the app was closed.
+ */
+export async function reconcileHabitReminders(db: SQLiteDatabase, userId: number): Promise<void> {
+  const permission = await getNotificationPermission();
+  if (permission !== 'granted') return;
+
+  const habits = await getHabitsWithReminders(db, userId);
+
+  for (const habit of habits) {
+    const existingIds = decodeIds(habit.notification_id);
+    if (existingIds.length > 0) continue; // already scheduled, nothing to reconcile
+
+    const ids = await scheduleHabitReminders(habit);
+    if (ids.length > 0) {
+      await setHabitNotificationId(db, habit.id, encodeIds(ids));
+    }
+  }
 }

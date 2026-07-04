@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
-import { SQLiteProvider } from 'expo-sqlite';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
-import { migrateDatabase, hasOnboarded } from '../db';
+import { migrateDatabase, hasOnboarded, getActiveUserId } from '../db';
 import { configureNotificationHandler, ensureAndroidChannel } from '../lib/notifications/setup';
 import { resolveNotificationRoute } from '../lib/notifications/deepLink';
+import { reconcileHabitReminders } from '../lib/notifications/schedule';
 
 function AppGate() {
   const { colors, scheme } = useTheme();
+  const db = useSQLiteContext();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -47,6 +49,17 @@ function AppGate() {
     hasOnboarded().then((done) => {
       if (!done) router.replace('/onboarding');
       setChecking(false);
+    });
+
+    // 5. Defensive reconciliation: if the user granted notification
+    // permission from system Settings while the app was closed (or after
+    // an app update), any habit reminders that couldn't be scheduled at
+    // creation/edit time are still sitting unset. Catch those up here too,
+    // not just right after the in-app permission prompt.
+    getActiveUserId().then((userId) => {
+      if (userId != null) {
+        reconcileHabitReminders(db, userId).catch(() => {});
+      }
     });
 
     return () => {
