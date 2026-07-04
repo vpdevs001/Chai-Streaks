@@ -31,7 +31,6 @@ export default function HabitFormFrequency({
 }: Props) {
   return (
     <Section title="Frequency" colors={colors}>
-
       <View style={styles.freqRow}>
         {(['daily', 'weekly', 'custom'] as FrequencyType[]).map((f) => (
           <Pressable
@@ -58,7 +57,7 @@ export default function HabitFormFrequency({
         ))}
       </View>
 
-      {frequency === 'custom' && (
+      {(frequency === 'weekly' || frequency === 'custom') && (
         <View style={styles.daysRow}>
           {DAYS.map((d, i) => (
             <Pressable

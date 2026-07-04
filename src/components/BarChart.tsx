@@ -13,9 +13,7 @@ const BAR_W_30 = 32;
 export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '30' }) {
   const { colors } = useTheme();
   const barW =
-    mode === '7'
-      ? (width - SPACING.base * 2 - SPACING.lg * 2 - BAR_GAP * 6) / 7
-      : BAR_W_30;
+    mode === '7' ? (width - SPACING.base * 2 - SPACING.lg * 2 - BAR_GAP * 6) / 7 : BAR_W_30;
 
   return (
     <View style={styles.chartWrap}>

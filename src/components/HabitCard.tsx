@@ -70,7 +70,11 @@ export default function HabitCard({
           </View>
           <View style={styles.habitMeta}>
             <Text
-              style={[styles.habitTitle, { color: colors.text }, completed && styles.habitTitleDone]}
+              style={[
+                styles.habitTitle,
+                { color: colors.text },
+                completed && styles.habitTitleDone
+              ]}
               numberOfLines={1}
             >
               {habit.title}
@@ -100,7 +104,13 @@ export default function HabitCard({
             ]}
             hitSlop={8}
           >
-            <Animated.Text style={[styles.checkIcon, { color: completed ? '#fff' : colors.textMuted }, checkStyle]}>
+            <Animated.Text
+              style={[
+                styles.checkIcon,
+                { color: completed ? '#fff' : colors.textMuted },
+                checkStyle
+              ]}
+            >
               {completed ? '✓' : '○'}
             </Animated.Text>
           </Pressable>

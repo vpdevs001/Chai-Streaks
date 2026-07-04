@@ -62,10 +62,7 @@ export default function ProfileCard({ user, onUserUpdated }: Props) {
 
   return (
     <View
-      style={[
-        styles.profileCard,
-        { backgroundColor: colors.card, borderColor: colors.border }
-      ]}
+      style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
       {/* Big tappable avatar */}
       <View style={styles.avatarWrap}>
@@ -81,7 +78,11 @@ export default function ProfileCard({ user, onUserUpdated }: Props) {
           ]}
         >
           {hasAvatar ? (
-            <Image source={{ uri: user.avatar_uri! }} style={styles.profileAvatarImage} contentFit="cover" />
+            <Image
+              source={{ uri: user.avatar_uri! }}
+              style={styles.profileAvatarImage}
+              contentFit="cover"
+            />
           ) : initials ? (
             <Text style={[styles.profileInitials, { color: colors.primary }]}>{initials}</Text>
           ) : (
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
   avatarWrap: {
     position: 'relative',
     width: 88,
-    height: 88,
+    height: 88
   },
 
   profileAvatar: {

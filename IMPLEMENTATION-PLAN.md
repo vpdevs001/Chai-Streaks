@@ -1,967 +1,211 @@
-# ChaiStreaks - Implementation Plan (Expo SDK 55)
+# ChaiStreaks — Notifications Implementation Plan
 
 Version: 1.0
-Target Platform: Android, iOS, Web
-Framework: Expo SDK 55
-Router: Expo Router
-Database: SQLite (Existing Implementation)
-Theme: System Default + Light/Dark Override
-Design Language: Orange + Neutral Black/White
-Style: Hybrid Productivity + Light Gamification
+Scope: Local reminders + push notifications + deep linking (per notifications PRD)
+Builds on top of: `IMPLEMENTATION-PLAN.md` (core app — already complete)
 
 ---
 
-# 1. Product Vision
+## 0. Guiding principle
 
-ChaiStreaks is a habit-building application focused on consistency rather than motivation.
+**Extend the existing structure, don't restructure it.** The PRD suggests `src/lib/habits/` and `src/lib/notifications/`, but this repo already has a working, tested data layer in `src/db/`. We keep that as-is and only add what's missing:
 
-Core philosophy:
-
-"Build habits one cup of chai at a time."
-
-The application should feel:
-
-- Fast
-- Warm
-- Focused
-- Modern
-- Delightful without being childish
-
-Users should be able to:
-
-- Create habits
-- Track completion
-- Maintain streaks
-- Visualize progress
-- Build consistency over time
-
----
-
-# 2. Technical Stack
-
-## Existing
-
-- Expo SDK 55
-- Expo Router
-- SQLite
-- TypeScript
-
-## Additional Packages
-
-```bash
-bun add react-native-reanimated
-bun add react-native-svg
-bun add react-native-chart-kit
-bun add lucide-react-native
-bun add expo-haptics
-bun add @react-native-async-storage/async-storage
 ```
-
----
-
-# 3. Database Review
-
-Existing tables:
-
-## users
-
-Stores application user information.
-
-## habits
-
-Stores all habit records.
-
-## habit_history
-
-Stores completion records.
-
-## preferences
-
-Stores application preferences.
-
----
-
-# 4. Proposed Database Enhancements
-
-No major schema changes required.
-
-Optional future fields:
-
-```sql
-last_completed_at TEXT
-```
-
-Purpose:
-
-- Faster streak calculations
-- Faster dashboard loading
-
-Not required for MVP.
-
----
-
-# 5. Folder Structure
-
-```txt
 src/
+  lib/
+    notifications/        ← NEW — everything notification-specific lives here
+      setup.ts             (permissions, Android channel, foreground handler, response listener)
+      schedule.ts          (schedule/cancel/reschedule per habit)
+      push.ts              (push token registration + storage)
+      deepLink.ts           (shared tap → route resolver, used by both local + push)
 
-app/
+  hooks/
+    useNotifications.ts    ← NEW — exposes permission status, request/openSettings, push token
+    useHabits.ts           (existing — gets two new calls: schedule on save, cancel on delete)
 
-  _layout.tsx
-
-  onboarding.tsx
-
-  (tabs)/
-    _layout.tsx
-
-    home.tsx
-    progress.tsx
-    settings.tsx
-
-  habit/
-    create.tsx
-    [id].tsx
-
-components/
-
-  ui/
-    Button.tsx
-    Card.tsx
-    Input.tsx
-    Modal.tsx
-    IconButton.tsx
-
-  habits/
-    HabitCard.tsx
-    HabitList.tsx
-    EmptyHabits.tsx
-
-  charts/
-    WeeklyChart.tsx
-    MonthlyChart.tsx
-    CompletionPieChart.tsx
-
-  onboarding/
-    OnboardingSlide.tsx
-
-  layout/
-    ScreenHeader.tsx
-    FloatingActionButton.tsx
-
-hooks/
-
-  useTheme.ts
-  useHabits.ts
-  useStats.ts
-
-services/
-
-  analytics/
-
-theme/
-
-  colors.ts
-  dark.ts
-  light.ts
-
-utils/
-
-  chaiScore.ts
-  dateHelpers.ts
-
-constants/
-
-  spacing.ts
-  typography.ts
+  db/                      (existing — already has the plumbing we need, see §1)
 ```
 
----
+Nothing in `src/db/` needs to move. Two already-existing exports do almost exactly what the PRD asks for:
 
-# 6. Navigation Architecture
+- `getHabitsWithReminders(db, userId)` — habits with `reminder_status = 'enabled'` (used to reschedule everything after a permission grant or app update)
+- `setHabitNotificationId(db, habitId, notificationId)` — persists the scheduled ID(s)
+- `getNotificationPermission` / `setNotificationPermission` (in `preferences.ts`) — cached permission status, backed by `expo-sqlite/kv-store`
 
-## Root Flow
+## 1. Data model decision: no schema migration needed
 
-```txt
-App Launch
-    │
-    ▼
+`habits.notification_id` is currently a single `TEXT` column. The PRD needs an array (a weekly habit reminding on Mon/Wed/Fri needs 3 scheduled notification IDs, one per weekday).
 
-Onboarding Completed?
-
-YES
- │
- ▼
-Tabs
-
-NO
- │
- ▼
-Onboarding
-```
-
----
-
-## Bottom Tabs
-
-```txt
-Home
-
-Progress
-
-Settings
-```
-
----
-
-## Floating Action Button
-
-Visible on:
-
-```txt
-Home
-```
-
-Navigates to:
-
-```txt
-Habit Create Screen
-```
-
----
-
-# 7. Theme System
-
-## Modes
-
-- System
-- Light
-- Dark
-
-Default:
-
-```txt
-System
-```
-
-Stored in:
-
-```txt
-preferences table
-```
-
----
-
-# 8. Color Palette
-
-## Dark Mode
-
-```txt
-Background #0D0D0D
-Surface    #171717
-Card       #1F1F1F
-
-Primary    #FF8A3D
-Hover      #FF9C5A
-
-Success    #22C55E
-Danger     #EF4444
-
-Text       #F5F5F5
-Muted      #A3A3A3
-```
-
----
-
-## Light Mode
-
-```txt
-Background #FAFAF8
-Surface    #FFFFFF
-Card       #FFFFFF
-
-Primary    #F97316
-Hover      #FB923C
-
-Text       #171717
-Muted      #737373
-
-Border     #E5E5E5
-```
-
----
-
-# 9. Onboarding
-
-Total Screens:
-
-```txt
-3
-```
-
----
-
-## Screen 1
-
-Title:
-
-```txt
-Build Tiny Habits
-That Actually Stick
-```
-
-Subtitle:
-
-```txt
-Consistency beats motivation.
-```
-
----
-
-## Screen 2
-
-Title:
-
-```txt
-Track Your Streaks
-```
-
-Visual:
-
-```txt
-Animated Streak Counter
-```
-
-Example:
-
-```txt
-🔥 23 Day Streak
-```
-
----
-
-## Screen 3
-
-Title:
-
-```txt
-One Cup At A Time ☕
-```
-
-CTA:
-
-```txt
-Start Building Habits
-```
-
----
-
-## Persistence
-
-Store:
-
-```txt
-onboarding_complete
-```
-
-Value:
-
-```txt
-true
-```
-
----
-
-# 10. Home Screen
-
-Structure:
-
-```txt
-Greeting Header
-
-Progress Ring
-
-Statistics Row
-
-Today's Habits
-
-Floating Action Button
-```
-
----
-
-## Greeting
-
-Examples:
-
-```txt
-Good Morning ☕
-
-Good Afternoon ☕
-
-Good Evening ☕
-```
-
----
-
-## Progress Card
-
-Displays:
-
-```txt
-Completion %
-
-Completed Habits
-
-Remaining Habits
-```
-
----
-
-## Statistics
-
-Cards:
-
-```txt
-🔥 Current Streak
-
-🏆 Best Streak
-
-☕ Chai Score
-```
-
----
-
-## Habit List
-
-Display:
-
-```txt
-Icon
-
-Title
-
-Current Streak
-
-Frequency
-
-Completion State
-```
-
----
-
-## Completion Style
-
-Selected Option:
-
-```txt
-Completed habits remain visible.
-```
-
-Visual Changes:
-
-```txt
-Opacity reduced
-
-Green checkmark
-
-Subtle strike-through
-```
-
----
-
-# 11. Habit Card
-
-Collapsed View
-
-```txt
-Icon
-
-Habit Name
-
-Current Streak
-
-Completion Button
-```
-
----
-
-Expanded View
-
-```txt
-Description
-
-Reminder Time
-
-Frequency
-
-Edit
-
-Archive
-
-Delete
-```
-
----
-
-# 12. Create Habit Screen
-
-Sections:
-
----
-
-## Basic Information
-
-Fields:
-
-```txt
-Title
-
-Description
-```
-
----
-
-## Appearance
-
-User can choose:
-
-```txt
-Emoji
-```
-
-OR
-
-```txt
-Lucide Icon
-```
-
----
-
-## Color Selection
-
-Presets:
-
-```txt
-Orange
-Green
-Yellow
-Pink
-Red
-Teal
-```
-
----
-
-## Frequency
-
-Options:
-
-```txt
-Daily
-
-Weekly
-
-Custom
-```
-
----
-
-## Reminder
-
-Time Picker
-
-```txt
-TODO: Add Notifications
-```
-
----
-
-## Save
-
-Sticky bottom action button.
-
----
-
-# 13. Edit Habit Screen
-
-Supports:
-
-```txt
-Update Habit
-
-Archive Habit
-
-Delete Habit
-```
-
----
-
-# 14. Progress Screen
-
-Tabs:
-
-```txt
-7 Days
-
-30 Days
-
-All Time
-```
-
----
-
-## Weekly Chart
-
-Bar Chart
-
-Displays:
-
-```txt
-Completion Count
-```
-
-Per day.
-
----
-
-## Monthly Chart
-
-Bar Chart
-
-Displays:
-
-```txt
-Daily Completions
-```
-
-Across 30 days.
-
----
-
-## Pie Chart
-
-Displays:
-
-```txt
-Completed %
-
-Missed %
-```
-
----
-
-## Statistics
-
-Cards:
-
-```txt
-Longest Streak
-
-Current Streak
-
-Total Completions
-
-Success Rate
-```
-
----
-
-# 15. Chai Score System
-
-Purpose:
-
-Provide a single consistency metric.
-
-Range:
-
-```txt
-0 - 100
-```
-
----
-
-Formula
+Rather than add a migration, **store a JSON-encoded array in the existing column**:
 
 ```ts
-score = currentStreak * 2 + completionRate * 50 + activeHabits * 2;
+// src/lib/notifications/schedule.ts
+type StoredIds = string[]; // JSON.stringify'd into habits.notification_id
+
+export function encodeIds(ids: string[]): string {
+  return JSON.stringify(ids);
+}
+export function decodeIds(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as string[];
+  } catch {
+    return raw ? [raw] : [];
+  }
+}
 ```
 
-Clamp:
+The `decodeIds` fallback (`raw ? [raw] : []`) safely handles any pre-existing plain-string values, so this is a non-breaking change. `setHabitNotificationId(db, habitId, encodeIds(ids))` — no signature change needed, it already accepts `string | null`.
+
+---
+
+## 2. Phase-by-phase plan
+
+### Phase 1 — Notification foundation (`src/lib/notifications/setup.ts`)
+
+Required before anything can be scheduled.
+
+- `configureNotificationHandler()` — call once at app boot:
+  ```ts
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true
+    })
+  });
+  ```
+- `ensureAndroidChannel()` — **must run before `requestPermissionsAsync()`**, since on Android the permission prompt itself is tied to channel importance; creating the channel after asking can silently downgrade it to default importance.
+  ```ts
+  await Notifications.setNotificationChannelAsync('habit-reminders', {
+    name: 'Habit Reminders',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250]
+  });
+  ```
+- `requestPermission()` — wraps `getPermissionsAsync` / `requestPermissionsAsync`, writes the result via `setNotificationPermission` (existing `db/preferences.ts` function) so the rest of the app can read cached status without an async native call.
+- `openNotificationSettings()` — `Linking.openSettings()` fallback for the denied state.
+
+Wire `configureNotificationHandler()` + `ensureAndroidChannel()` into `src/app/_layout.tsx`, in `RootLayout`, before the `AppGate` renders — same place `migrateDatabase` already runs.
+
+### Phase 2 — Scheduling (`src/lib/notifications/schedule.ts`)
 
 ```ts
-0 - 100;
+scheduleHabitReminders(habit: Habit): Promise<string[]>
+cancelHabitReminders(habit: Habit): Promise<void>
+rescheduleHabitReminders(habit: Habit): Promise<string[]>  // cancel + schedule
 ```
 
----
+- `daily` → one `Notifications.scheduleNotificationAsync` with a `calendar` trigger (hour/minute from `reminder_time`, `repeats: true`).
+- `weekly` / `custom` → one scheduled notification **per selected weekday** (`frequency_days`), each with `{ weekday, hour, minute, repeats: true }`.
+- Every scheduled notification's `content.data` carries the deep-link contract from the PRD:
+  ```ts
+  data: { screen: '/habit', habitId: habit.id }
+  ```
+- `cancelHabitReminders` decodes the stored IDs and calls `Notifications.cancelScheduledNotificationAsync` per ID — **only for that habit**, never `cancelAllScheduledNotificationsAsync`.
 
-Displayed On
+Wiring into existing screens:
 
-```txt
-Home
+| Screen                               | Change                                                                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/app/habit/create.tsx`           | After `createHabit(...)`, if `reminder_status === 'enabled'`, call `scheduleHabitReminders`, then `setHabitNotificationId(db, habit.id, encodeIds(ids))`.                |
+| `src/app/habit/[id].tsx` (edit save) | Before calling `updateHabit`, call `cancelHabitReminders(existingHabit)`; after update, if reminders still enabled, `scheduleHabitReminders` + `setHabitNotificationId`. |
+| `src/app/habit/[id].tsx` (delete)    | Before `deleteHabit`, call `cancelHabitReminders(habit)`.                                                                                                                |
 
-Progress
+This mirrors the existing pattern in `useHabits.ts` (`toggleHabit` calling into `src/db` then refreshing state) — no new architectural pattern introduced.
+
+### Phase 3 — Deep linking + tap handling (`src/lib/notifications/deepLink.ts`)
+
+One resolver shared by local and push, since the PRD requires both to reuse the same tap handler:
+
+```ts
+export function resolveNotificationRoute(data: Record<string, unknown>): string | null {
+  if (data?.screen === '/habit' && data?.habitId != null) {
+    return `/habit/${data.habitId}`;
+  }
+  return null;
+}
 ```
 
----
+In `src/app/_layout.tsx`:
 
-# 16. Settings Screen
+- `Notifications.addNotificationResponseReceivedListener` — handles taps while the app is running (foreground/background), routes via `router.push(resolveNotificationRoute(...))`.
+- `Notifications.getLastNotificationResponseAsync()` on mount — handles the **cold start** case (app was killed, user tapped notification to launch it), which is easy to miss and is explicitly implied by the PRD's "app closed" push scenario.
 
-Sections:
+Expose both through `useNotifications()` so `_layout.tsx` stays thin.
 
----
+### Phase 4 — Permission UX (Settings tab)
 
-## Appearance
+Replace the current placeholder in `src/app/(tabs)/settings.tsx`:
 
-Options:
-
-```txt
-System
-
-Light
-
-Dark
+```tsx
+<SettingsRow emoji="🔔" label="Habit Reminders" sublabel="Coming soon" />
 ```
 
----
+with a real permission-aware row driven by `useNotifications()`:
 
-## Data
+- `granted` → "Habit Reminders — On"
+- `denied` → "Habit Reminders — Off · Tap to open Settings" → `openNotificationSettings()`
+- `undetermined` → "Habit Reminders — Tap to enable" → `requestPermission()`
 
-Actions:
+No crash path: every call in `setup.ts` and `schedule.ts` should check permission state first and no-op (not throw) if denied — the habit still saves, it just isn't scheduled.
 
-```txt
-Export Data
+### Phase 5 — Push notifications (`src/lib/notifications/push.ts`)
 
-Import Data
-
-Reset Data
-```
-
----
-
-## Notifications
-
-Placeholder
-
-```txt
-TODO: Add Notifications
-```
+- `registerForPushToken()` — `Notifications.getExpoPushTokenAsync({ projectId })` (projectId already in `app.json` → `extra.eas.projectId`), gated behind `Device.isDevice` (already have `expo-device` installed).
+- Store the token via the existing generic `setPreference` / `getPreference` helpers (`db/preferences.ts`) — no new persistence layer needed, e.g. key `'@habit_tracker/push_token'`.
+- Settings tab: new "Push" section — token displayed in a selectable `Text`, with a "Copy" button (`expo-clipboard` — one new dependency).
+- Push payloads use the **same** `{ screen, habitId }` data contract and are handled by the **same** `resolveNotificationRoute` — reuse, not a parallel code path.
+- Document (in README) that push requires a dev build (`eas build --profile development`) since it doesn't work in Expo Go — `eas.json` already has a working `development` profile, no changes needed there.
+- Testing: a tiny standalone Node script (not shipped in the app) using `expo-server-sdk`, per the PRD's "sending is a server-side responsibility" rule — lives outside `src/`, e.g. `scripts/send-test-push.ts`.
 
 ---
 
-## About
+## 3. Easy bonus wins (worth doing alongside the above)
 
-Displays:
+These either reuse data/plumbing that already exists, or are a few lines on top of Phase 1–5 work.
 
-```txt
-Version
+| Bonus feature                                    | Why it's easy                                                                                                                                                                                                                                                                                    | Effort                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| **Calendar-style streak view**                   | `getHabitCalendarData(db, habitId, days)` **already exists** in `historyMethods.ts` and returns exactly a `{date: status}` map for the last 90 days — nobody's built a UI for it yet. Add a small heatmap grid component (`CalendarHeatmap.tsx`) to `src/app/habit/[id].tsx`. Zero backend work. | Small                       |
+| **App badge count**                              | `Notifications.setBadgeCountAsync(count)` — the "today's pending habits" number is already computed in `useHabits.ts` (`habits.length - completedCount`). Just call it whenever that value changes.                                                                                              | Small                       |
+| **Quiet hours**                                  | Generic `getPreference`/`setPreference` helpers already exist in `db/preferences.ts` — store `quiet_hours_start`/`quiet_hours_end`, and check the window inside `scheduleHabitReminders` before setting the trigger (skip/shift reminders that land inside it).                                  | Small–Medium                |
+| **Snooze action**                                | `Notifications.scheduleNotificationAsync` again with the same `habitId`, offset +10 min, triggered from `addNotificationResponseReceivedListener` when `actionIdentifier === 'snooze'`. Needs one `setNotificationCategoryAsync` category registered in `setup.ts`.                              | Medium                      |
+| **iOS action buttons (Done / Snooze)**           | Same category API as Snooze above — register once, "Done" action calls the same `markHabitCompleted` already in `db/historyMethods.ts` used by `useHabits.toggleHabit`.                                                                                                                          | Medium                      |
+| **Drop invalid tokens on `DeviceNotRegistered`** | Only relevant once push receipts are checked server-side (Phase 5 test script) — just delete the stored token via `removePreference`.                                                                                                                                                            | Small (once Phase 5 exists) |
 
-GitHub
-
-Privacy Policy
-```
-
----
-
-# 17. Animations
-
-Library:
-
-```txt
-React Native Reanimated
-```
+Not included as "easy": daily summary push, image push, push receipts dashboard — these need a real backend/scheduler and are out of scope for a client-only repo.
 
 ---
 
-## Habit Completion
-
-Animation:
-
-```txt
-Scale Down
-
-Scale Up
-
-Checkmark Pop
-```
-
-Duration:
-
-```txt
-250ms
-```
-
----
-
-## Progress Ring
-
-Animated value transition.
-
----
-
-## Statistics Cards
-
-Fade-in on load.
-
----
-
-## FAB
-
-Scale animation.
-
----
-
-## Page Transitions
-
-```txt
-Fade + Slide
-```
-
----
-
-# 18. Haptics
-
-Library:
-
-```txt
-expo-haptics
-```
-
-Triggers:
-
-```txt
-Habit Completion
-
-Habit Creation
-
-Habit Deletion
-```
-
----
-
-# 19. Hover States (Web)
-
-Cards:
-
-```txt
-translateY(-2)
-```
-
----
-
-Buttons:
-
-```txt
-brightness + 5%
-```
-
----
-
-Inputs:
-
-```txt
-orange border
-```
-
----
-
-# 20. Accessibility
-
-Requirements:
-
-- Touch targets >= 44px
-- Accessible labels
-- Theme contrast support
-- Dynamic font scaling
-
----
-
-# 21. Future Features
-
-Phase 2
-
-```txt
-Notifications
-
-Achievements
-
-Cloud Sync
-
-Authentication
-
-Widgets
-
-Share Progress Cards
-```
-
----
-
-# 22. Development Order
-
-Phase 1
-
-Theme System
-
-Navigation
-
-Onboarding
-
-Bottom Tabs
-
----
-
-Phase 2
-
-Home Screen
-
-Habit Cards
-
-FAB
-
----
-
-Phase 3
-
-Create/Edit Habit
-
-Database Integration
-
----
-
-Phase 4
-
-Progress Screen
-
-Charts
-
-Chai Score
-
----
-
-Phase 5
-
-Settings
-
-Theme Persistence
-
-Data Management
-
----
-
-Phase 6
-
-Polish
-
-Animations
-
-Haptics
-
-Empty States
-
-Accessibility
+## 4. Suggested build order
+
+1. Phase 1 (foundation) — nothing else works without this.
+2. Phase 2 (scheduling) + wire into create/edit/delete — this alone satisfies most of the PRD's "local notifications" core requirement.
+3. Phase 3 (deep linking) — small, high value, makes reminders actually useful.
+4. Phase 4 (Settings permission UX) — mostly UI, unblocks real device testing.
+5. **Bonus: app badge + calendar view** — do these here, they're nearly free and don't depend on push.
+6. Phase 5 (push) — biggest lift (dev build required to test).
+7. **Bonus: quiet hours, snooze/action buttons** — natural follow-ups once push + scheduling both exist.
+
+## 5. New files summary
 
 ```
+src/lib/notifications/setup.ts       (new)
+src/lib/notifications/schedule.ts    (new)
+src/lib/notifications/push.ts        (new)
+src/lib/notifications/deepLink.ts    (new)
+src/hooks/useNotifications.ts        (new)
+src/components/CalendarHeatmap.tsx   (new — bonus)
+scripts/send-test-push.ts            (new — push testing only, not shipped)
 
-Success Criteria:
-
-A user can install ChaiStreaks, complete onboarding, create habits, maintain streaks, track progress, switch themes, and view consistency analytics without any notifications implementation.
+src/app/_layout.tsx                  (edit — register handler + tap listener)
+src/app/habit/create.tsx             (edit — schedule on save)
+src/app/habit/[id].tsx               (edit — cancel/reschedule/cancel-on-delete)
+src/app/(tabs)/settings.tsx          (edit — real permission row + push token section)
+app.json                             (edit — add expo-notifications config plugin)
+package.json                        (edit — add expo-clipboard, expo-server-sdk as devDependency for the test script)
 ```
+
+No changes needed to `src/db/schema.ts`, `src/db/types.ts` (beyond documenting the JSON-array convention), or `eas.json`.

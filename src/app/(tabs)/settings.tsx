@@ -1,17 +1,36 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  Pressable,
+  Switch,
+  TextInput
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
-import { resetOnboarding, resetAllData, clearActiveUserId, ensureActiveUser, getUserById } from '../../db';
+import {
+  resetOnboarding,
+  resetAllData,
+  clearActiveUserId,
+  ensureActiveUser,
+  getUserById,
+  getPreference,
+  setPreference
+} from '../../db';
 import type { User } from '../../db/types';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import SettingsSectionHeader from '../../components/SettingsSectionHeader';
 import SettingsRow from '../../components/SettingsRow';
 import ThemePicker from '../../components/ThemePicker';
 import ProfileCard from '../../components/ProfileCard';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
@@ -27,11 +46,55 @@ export default function SettingsScreen() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [resetting, setResetting] = useState(false);
 
+  const {
+    permission,
+    pushToken,
+    requestPermission,
+    openNotificationSettings,
+    registerPush,
+    refreshPermission
+  } = useNotifications();
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
+  const [quietHoursStart, setQuietHoursStart] = useState('22:00');
+  const [quietHoursEnd, setQuietHoursEnd] = useState('07:00');
+  const [copiedToken, setCopiedToken] = useState(false);
+
   const loadUser = useCallback(async () => {
     const uid = await ensureActiveUser(db);
     const u = await getUserById(db, uid);
     setUser(u);
-  }, [db]);
+
+    const qEnabled = await getPreference('@habit_tracker/quiet_hours_enabled');
+    const qStart = await getPreference('@habit_tracker/quiet_hours_start');
+    const qEnd = await getPreference('@habit_tracker/quiet_hours_end');
+    setQuietHoursEnabled(qEnabled === 'true');
+    if (qStart) setQuietHoursStart(qStart);
+    if (qEnd) setQuietHoursEnd(qEnd);
+    await refreshPermission();
+  }, [db, refreshPermission]);
+
+  const toggleQuietHours = async (val: boolean) => {
+    setQuietHoursEnabled(val);
+    await setPreference('@habit_tracker/quiet_hours_enabled', val ? 'true' : 'false');
+  };
+
+  const saveQuietHoursStart = async (val: string) => {
+    setQuietHoursStart(val);
+    await setPreference('@habit_tracker/quiet_hours_start', val);
+  };
+
+  const saveQuietHoursEnd = async (val: string) => {
+    setQuietHoursEnd(val);
+    await setPreference('@habit_tracker/quiet_hours_end', val);
+  };
+
+  const handleCopyToken = async () => {
+    if (pushToken) {
+      await Clipboard.setStringAsync(pushToken);
+      setCopiedToken(true);
+      setTimeout(() => setCopiedToken(false), 2000);
+    }
+  };
 
   // Refresh user data each time the settings tab gains focus
   useFocusEffect(
@@ -96,7 +159,12 @@ export default function SettingsScreen() {
             </View>
           </Pressable>
           {showThemePicker && (
-            <View style={[styles.themePickerWrap, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <View
+              style={[
+                styles.themePickerWrap,
+                { borderColor: colors.border, backgroundColor: colors.card }
+              ]}
+            >
               <ThemePicker />
             </View>
           )}
@@ -105,40 +173,103 @@ export default function SettingsScreen() {
         {/* Notifications */}
         <SettingsSectionHeader title="Notifications" />
         <View style={styles.group}>
-          <SettingsRow emoji="🔔" label="Habit Reminders" sublabel="Coming soon" />
+          <SettingsRow
+            emoji="🔔"
+            label="Local Reminders"
+            sublabel={
+              permission === 'granted'
+                ? 'On'
+                : permission === 'denied'
+                  ? 'Off · Tap to open Settings'
+                  : 'Tap to enable'
+            }
+            onPress={
+              permission === 'denied'
+                ? openNotificationSettings
+                : permission === 'undetermined'
+                  ? requestPermission
+                  : undefined
+            }
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <View style={[styles.switchRow, { backgroundColor: colors.card }]}>
+            <View style={[styles.rowIcon, { backgroundColor: colors.primary + '18' }]}>
+              <Text style={styles.rowEmoji}>🌙</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: colors.text }]}>Quiet Hours</Text>
+              <Text style={[styles.rowSub, { color: colors.textMuted }]}>
+                Shift notifications during quiet times
+              </Text>
+            </View>
+            <Switch
+              value={quietHoursEnabled}
+              onValueChange={toggleQuietHours}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+
+          {quietHoursEnabled && (
+            <View style={[styles.timeRowContainer, { backgroundColor: colors.card }]}>
+              <View style={styles.timeInputGroup}>
+                <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>Start</Text>
+                <TextInput
+                  style={[
+                    styles.timeInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.inputBg
+                    }
+                  ]}
+                  value={quietHoursStart}
+                  onChangeText={saveQuietHoursStart}
+                  placeholder="22:00"
+                  placeholderTextColor={colors.textMuted}
+                  maxLength={5}
+                />
+              </View>
+              <View style={styles.timeInputGroup}>
+                <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>End</Text>
+                <TextInput
+                  style={[
+                    styles.timeInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.inputBg
+                    }
+                  ]}
+                  value={quietHoursEnd}
+                  onChangeText={saveQuietHoursEnd}
+                  placeholder="07:00"
+                  placeholderTextColor={colors.textMuted}
+                  maxLength={5}
+                />
+              </View>
+            </View>
+          )}
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <SettingsRow
+            emoji="💬"
+            label="Push Token"
+            sublabel={
+              pushToken
+                ? copiedToken
+                  ? 'Copied to clipboard! ✅'
+                  : 'Tap to copy token'
+                : 'Tap to register push token'
+            }
+            onPress={pushToken ? handleCopyToken : registerPush}
+          />
         </View>
 
         {/* Data */}
         <SettingsSectionHeader title="Data" />
         <View style={styles.group}>
-          <SettingsRow
-            emoji="📤"
-            label="Export Data"
-            sublabel="Save your habits as JSON"
-            onPress={() =>
-              setDialog({
-                key: 'export',
-                title: 'Export Data',
-                message: 'Data export is coming in a future update.',
-                label: 'Got it'
-              })
-            }
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <SettingsRow
-            emoji="📥"
-            label="Import Data"
-            sublabel="Restore from a backup"
-            onPress={() =>
-              setDialog({
-                key: 'import',
-                title: 'Import Data',
-                message: 'Data import is coming in a future update.',
-                label: 'Got it'
-              })
-            }
-          />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <SettingsRow
             emoji="🗑️"
             label="Reset All Data"
@@ -269,6 +400,46 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginLeft: SPACING.md + 38 + SPACING.md
+  },
+
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 0
+  },
+
+  timeRowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth
+  },
+
+  timeInputGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm
+  },
+
+  timeLabel: {
+    fontSize: TYPOGRAPHY.sm,
+    fontWeight: TYPOGRAPHY.medium
+  },
+
+  timeInput: {
+    borderRadius: RADII.md,
+    borderWidth: 1,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    fontSize: TYPOGRAPHY.sm,
+    textAlign: 'center',
+    width: 70
   },
 
   tagline: {

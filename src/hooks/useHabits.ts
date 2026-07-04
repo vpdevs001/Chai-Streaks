@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Notifications from 'expo-notifications';
 import {
   getHabitsWithStreaks,
   markHabitCompleted,
@@ -111,6 +112,12 @@ export function useHabits() {
 
   const completedCount = Object.values(todayHistory).filter((h) => h.status === 'completed').length;
   const completionRate = habits.length > 0 ? completedCount / habits.length : 0;
+
+  useEffect(() => {
+    if (!userId) return;
+    const pendingCount = habits.length > 0 ? habits.length - completedCount : 0;
+    Notifications.setBadgeCountAsync(pendingCount).catch(() => {});
+  }, [habits.length, completedCount, userId]);
 
   return {
     habits,

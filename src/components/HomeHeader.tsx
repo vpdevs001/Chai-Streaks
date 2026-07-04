@@ -20,9 +20,7 @@ export default function HomeHeader({ colors, user }: Props) {
   return (
     <View style={styles.header}>
       <View>
-        <Text style={[styles.greeting, { color: colors.text }]}>
-          {getGreeting(firstName)}
-        </Text>
+        <Text style={[styles.greeting, { color: colors.text }]}>{getGreeting(firstName)}</Text>
         <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDate(new Date())}</Text>
       </View>
       <Pressable

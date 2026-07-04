@@ -16,12 +16,25 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { HABIT_COLORS } from '../../theme';
-import { getHabitById, updateHabit, archiveHabit, deleteHabit } from '../../db';
+import {
+  getHabitById,
+  updateHabit,
+  archiveHabit,
+  deleteHabit,
+  setHabitNotificationId,
+  getHabitCalendarData
+} from '../../db';
 import { isReleasedDbError } from '../../db/utils';
 import type { Habit, FrequencyType } from '../../db/types';
+import {
+  cancelHabitReminders,
+  scheduleHabitReminders,
+  encodeIds
+} from '../../lib/notifications/schedule';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import Section from '../../components/Section';
 import Label from '../../components/Label';
+import CalendarHeatmap from '../../components/CalendarHeatmap';
 import HabitFormAppearance from '../../components/HabitFormAppearance';
 import HabitFormFrequency from '../../components/HabitFormFrequency';
 import HabitDangerZone from '../../components/HabitDangerZone';
@@ -47,6 +60,7 @@ export default function EditHabitScreen() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [targetCount, setTargetCount] = useState(1);
   const [reminderTime, setReminderTime] = useState('');
+  const [history, setHistory] = useState<Record<string, 'completed' | 'skipped' | 'partial'>>({});
 
   useEffect(() => {
     // This screen is a modal that can be dismissed (router.back()) before
@@ -68,6 +82,15 @@ export default function EditHabitScreen() {
           setTargetCount(h.target_count);
           setReminderTime(h.reminder_time ?? '');
         }
+      })
+      .catch((err) => {
+        if (!isActive) return;
+        if (!isReleasedDbError(err)) throw err;
+      });
+
+    getHabitCalendarData(db, habitId)
+      .then((data) => {
+        if (isActive) setHistory(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -92,17 +115,32 @@ export default function EditHabitScreen() {
     setSaving(true);
     setError('');
     try {
-      await updateHabit(db, habitId, {
+      if (habit) {
+        await cancelHabitReminders(habit);
+      }
+
+      const updated = await updateHabit(db, habitId, {
         title: title.trim(),
         description: description.trim() || undefined,
         icon,
         color,
         frequency_type: frequency,
-        frequency_days: JSON.stringify(frequency === 'custom' ? selectedDays : []),
+        frequency_days: JSON.stringify(
+          frequency === 'weekly' || frequency === 'custom' ? selectedDays : []
+        ),
         target_count: targetCount,
         reminder_status: reminderTime ? 'enabled' : 'disabled',
-        reminder_time: reminderTime || undefined
+        reminder_time: reminderTime || null,
+        notification_id: null // Reset to empty first, will be set below if enabled
       });
+
+      if (updated.reminder_status === 'enabled') {
+        const ids = await scheduleHabitReminders(updated);
+        if (ids.length > 0) {
+          await setHabitNotificationId(db, updated.id, encodeIds(ids));
+        }
+      }
+
       router.back();
     } catch {
       setError('Failed to save changes.');
@@ -112,12 +150,18 @@ export default function EditHabitScreen() {
   };
 
   const handleArchive = async () => {
+    if (habit) {
+      await cancelHabitReminders(habit);
+    }
     await archiveHabit(db, habitId);
     setDialog(null);
     router.back();
   };
 
   const handleDelete = async () => {
+    if (habit) {
+      await cancelHabitReminders(habit);
+    }
     await deleteHabit(db, habitId);
     setDialog(null);
     router.back();
@@ -161,181 +205,192 @@ export default function EditHabitScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-      <View style={[styles.root, { backgroundColor: colors.background }]}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.closeBtn, { opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Habit</Text>
-          <View style={{ width: 36 }} />
-        </View>
-
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Preview */}
-          <View
-            style={[
-              styles.previewChip,
-              { backgroundColor: color + '22', borderColor: color + '55' }
-            ]}
-          >
-            <Text style={styles.previewIcon}>{icon}</Text>
-            <Text style={[styles.previewName, { color: colors.text }]} numberOfLines={1}>
-              {title || 'Your habit'}
-            </Text>
+        <View style={[styles.root, { backgroundColor: colors.background }]}>
+          {/* Header */}
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [styles.closeBtn, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
+            </Pressable>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Habit</Text>
+            <View style={{ width: 36 }} />
           </View>
 
-          {/* Basic */}
-          <Section title="Basic Information" colors={colors}>
-            <Label label="Habit Name *" colors={colors} />
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.inputBg,
-                  borderColor: error ? colors.danger : colors.border,
-                  color: colors.text
-                }
-              ]}
-              placeholder="e.g. Morning meditation"
-              placeholderTextColor={colors.textMuted}
-              value={title}
-              onChangeText={(t) => {
-                setTitle(t);
-                setError('');
-              }}
-              maxLength={60}
-            />
-            <Label label="Description" colors={colors} />
-            <TextInput
-              style={[
-                styles.input,
-                styles.textarea,
-                { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }
-              ]}
-              placeholder="Optional"
-              placeholderTextColor={colors.textMuted}
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={3}
-              maxLength={200}
-            />
-          </Section>
-
-          <HabitFormAppearance
-            colors={colors}
-            icon={icon}
-            color={color}
-            onIconChange={setIcon}
-            onColorChange={setColor}
-          />
-
-          <HabitFormFrequency
-            colors={colors}
-            color={color}
-            frequency={frequency}
-            selectedDays={selectedDays}
-            targetCount={targetCount}
-            onFrequencyChange={setFrequency}
-            onToggleDay={toggleDay}
-            onTargetCountChange={setTargetCount}
-          />
-
-          {/* Reminder */}
-          <Section title="Reminder" colors={colors}>
-            <Label label="Reminder Time (HH:MM)" colors={colors} />
-            <TextInput
-              style={[
-                styles.input,
-                { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }
-              ]}
-              placeholder="e.g. 07:30  (notifications coming soon)"
-              placeholderTextColor={colors.textMuted}
-              value={reminderTime}
-              onChangeText={setReminderTime}
-              keyboardType="numbers-and-punctuation"
-              maxLength={5}
-            />
-          </Section>
-
-          {/* Danger zone */}
-          <Section title="Danger Zone" colors={colors}>
-            <HabitDangerZone
-              colors={colors}
-              onArchive={() => setDialog('archive')}
-              onDelete={() => setDialog('delete')}
-            />
-          </Section>
-
-          {error ? (
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Preview */}
             <View
               style={[
-                styles.errorBox,
-                { backgroundColor: colors.danger + '18', borderColor: colors.danger + '44' }
+                styles.previewChip,
+                { backgroundColor: color + '22', borderColor: color + '55' }
               ]}
             >
-              <Text style={[styles.errorText, { color: colors.danger }]}>⚠️ {error}</Text>
+              <Text style={styles.previewIcon}>{icon}</Text>
+              <Text style={[styles.previewName, { color: colors.text }]} numberOfLines={1}>
+                {title || 'Your habit'}
+              </Text>
             </View>
-          ) : null}
 
-          <View style={{ height: 120 }} />
-        </ScrollView>
+            {/* Basic */}
+            <Section title="Basic Information" colors={colors}>
+              <Label label="Habit Name *" colors={colors} />
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: error ? colors.danger : colors.border,
+                    color: colors.text
+                  }
+                ]}
+                placeholder="e.g. Morning meditation"
+                placeholderTextColor={colors.textMuted}
+                value={title}
+                onChangeText={(t) => {
+                  setTitle(t);
+                  setError('');
+                }}
+                maxLength={60}
+              />
+              <Label label="Description" colors={colors} />
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.textarea,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.border,
+                    color: colors.text
+                  }
+                ]}
+                placeholder="Optional"
+                placeholderTextColor={colors.textMuted}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={3}
+                maxLength={200}
+              />
+            </Section>
 
-        {/* Sticky save */}
-        <View
-          style={[
-            styles.stickyBottom,
-            { backgroundColor: colors.background, borderTopColor: colors.border }
-          ]}
-        >
-          <Pressable
-            style={({ pressed }) => [
-              styles.saveBtn,
-              {
-                backgroundColor: color,
-                opacity: pressed ? 0.85 : 1
-              }
+            <HabitFormAppearance
+              colors={colors}
+              icon={icon}
+              color={color}
+              onIconChange={setIcon}
+              onColorChange={setColor}
+            />
+
+            <HabitFormFrequency
+              colors={colors}
+              color={color}
+              frequency={frequency}
+              selectedDays={selectedDays}
+              targetCount={targetCount}
+              onFrequencyChange={setFrequency}
+              onToggleDay={toggleDay}
+              onTargetCountChange={setTargetCount}
+            />
+
+            {/* Reminder */}
+            <Section title="Reminder" colors={colors}>
+              <Label label="Reminder Time (HH:MM)" colors={colors} />
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.border,
+                    color: colors.text
+                  }
+                ]}
+                placeholder="e.g. 07:30"
+                placeholderTextColor={colors.textMuted}
+                value={reminderTime}
+                onChangeText={setReminderTime}
+                keyboardType="numbers-and-punctuation"
+                maxLength={5}
+              />
+            </Section>
+
+            {/* 90-Day Streak Heatmap View */}
+            <CalendarHeatmap habitColor={color} history={history} />
+
+            {/* Danger zone */}
+            <Section title="Danger Zone" colors={colors}>
+              <HabitDangerZone
+                colors={colors}
+                onArchive={() => setDialog('archive')}
+                onDelete={() => setDialog('delete')}
+              />
+            </Section>
+
+            {error ? (
+              <View
+                style={[
+                  styles.errorBox,
+                  { backgroundColor: colors.danger + '18', borderColor: colors.danger + '44' }
+                ]}
+              >
+                <Text style={[styles.errorText, { color: colors.danger }]}>⚠️ {error}</Text>
+              </View>
+            ) : null}
+
+            <View style={{ height: 120 }} />
+          </ScrollView>
+
+          {/* Sticky save */}
+          <View
+            style={[
+              styles.stickyBottom,
+              { backgroundColor: colors.background, borderTopColor: colors.border }
             ]}
-            onPress={handleSave}
-            disabled={saving}
           >
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.saveBtnText}>Save Changes</Text>
-            )}
-          </Pressable>
-        </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveBtn,
+                {
+                  backgroundColor: color,
+                  opacity: pressed ? 0.85 : 1
+                }
+              ]}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>Save Changes</Text>
+              )}
+            </Pressable>
+          </View>
 
-        <ConfirmDialog
-          visible={dialog === 'archive'}
-          title="Archive Habit?"
-          message="This will hide the habit from your home screen. Your history will be preserved."
-          confirmLabel="Archive"
-          onConfirm={handleArchive}
-          onCancel={() => setDialog(null)}
-        />
-        <ConfirmDialog
-          visible={dialog === 'delete'}
-          title="Delete Habit?"
-          message="This will permanently delete this habit and all its history. This cannot be undone."
-          confirmLabel="Delete"
-          destructive
-          onConfirm={handleDelete}
-          onCancel={() => setDialog(null)}
-        />
-      </View>
-    </KeyboardAvoidingView>
-  </SafeAreaView>
-);
+          <ConfirmDialog
+            visible={dialog === 'archive'}
+            title="Archive Habit?"
+            message="This will hide the habit from your home screen. Your history will be preserved."
+            confirmLabel="Archive"
+            onConfirm={handleArchive}
+            onCancel={() => setDialog(null)}
+          />
+          <ConfirmDialog
+            visible={dialog === 'delete'}
+            title="Delete Habit?"
+            message="This will permanently delete this habit and all its history. This cannot be undone."
+            confirmLabel="Delete"
+            destructive
+            onConfirm={handleDelete}
+            onCancel={() => setDialog(null)}
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({

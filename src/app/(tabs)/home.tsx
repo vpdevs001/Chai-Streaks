@@ -24,8 +24,16 @@ import EmptyHabits from '../../components/EmptyHabits';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { habits, user, loading, refresh, toggleHabit, isCompleted, completedCount, completionRate } =
-    useHabits();
+  const {
+    habits,
+    user,
+    loading,
+    refresh,
+    toggleHabit,
+    isCompleted,
+    completedCount,
+    completionRate
+  } = useHabits();
 
   useFocusEffect(
     useCallback(() => {
@@ -197,8 +205,6 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sm,
     fontWeight: TYPOGRAPHY.semibold
   },
-
-
 
   fab: {
     position: 'absolute',
