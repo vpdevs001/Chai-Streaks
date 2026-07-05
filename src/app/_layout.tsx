@@ -17,9 +17,31 @@ function AppGate() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // 1. Initialise Notification settings
-    configureNotificationHandler();
-    ensureAndroidChannel();
+    let isActive = true;
+
+    // 1. Initialise notification settings. The channel must exist before
+    // anything schedules a notification against it (e.g. reconciliation
+    // below, or a habit save that fires milliseconds after boot) — on
+    // Android, scheduling before the channel exists can silently drop the
+    // notification, so we await it instead of firing-and-forgetting.
+    async function initAndroidChannel() {
+      configureNotificationHandler();
+      await ensureAndroidChannel();
+    }
+    initAndroidChannel().then(() => {
+      if (!isActive) return;
+
+      // 5. Defensive reconciliation: if the user granted notification
+      // permission from system Settings while the app was closed (or after
+      // an app update), any habit reminders that couldn't be scheduled at
+      // creation/edit time are still sitting unset. Catch those up here too,
+      // not just right after the in-app permission prompt.
+      getActiveUserId().then((userId) => {
+        if (userId != null) {
+          reconcileHabitReminders(db, userId).catch(() => {});
+        }
+      });
+    });
 
     // 2. Tap handler for notifications when app is running
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -51,18 +73,8 @@ function AppGate() {
       setChecking(false);
     });
 
-    // 5. Defensive reconciliation: if the user granted notification
-    // permission from system Settings while the app was closed (or after
-    // an app update), any habit reminders that couldn't be scheduled at
-    // creation/edit time are still sitting unset. Catch those up here too,
-    // not just right after the in-app permission prompt.
-    getActiveUserId().then((userId) => {
-      if (userId != null) {
-        reconcileHabitReminders(db, userId).catch(() => {});
-      }
-    });
-
     return () => {
+      isActive = false;
       subscription.remove();
     };
   }, []);

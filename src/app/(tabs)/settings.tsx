@@ -7,11 +7,13 @@ import {
   Platform,
   Pressable,
   Switch,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../contexts/ThemeContext';
 
 let Clipboard: any = null;
@@ -103,6 +105,30 @@ export default function SettingsScreen() {
     if (status === 'granted' && user) {
       await reconcileHabitReminders(db, user.id);
     }
+  };
+
+  // Dev-only debug helper: dump exactly what expo-notifications currently
+  // has registered with the OS. Use this to tell apart "it never got
+  // scheduled" (a bug in our code) from "it was scheduled but the OS never
+  // delivered it" (permissions/battery-optimization/OEM issue) — the two
+  // look identical from the outside otherwise.
+  const handleDebugScheduled = async () => {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    if (scheduled.length === 0) {
+      Alert.alert('No scheduled notifications', 'expo-notifications has nothing registered.');
+      return;
+    }
+    const lines = scheduled.map((n) => {
+      const trigger: any = n.trigger;
+      const when =
+        trigger?.type === 'daily' || trigger?.hour != null
+          ? `daily @ ${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`
+          : trigger?.type === 'weekly'
+            ? `weekly day ${trigger.weekday} @ ${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`
+            : JSON.stringify(trigger);
+      return `• ${n.content.title} — ${when}`;
+    });
+    Alert.alert(`${scheduled.length} scheduled`, lines.join('\n'));
   };
 
   const handleCopyToken = async () => {
@@ -286,6 +312,18 @@ export default function SettingsScreen() {
             }
             onPress={pushToken ? handleCopyToken : registerPush}
           />
+
+          {__DEV__ && (
+            <>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <SettingsRow
+                emoji="🛠️"
+                label="Debug: Scheduled Reminders"
+                sublabel="Dev only — see what's actually registered with the OS"
+                onPress={handleDebugScheduled}
+              />
+            </>
+          )}
         </View>
 
         {/* Data */}
