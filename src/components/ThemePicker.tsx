@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import { useTheme } from '../contexts/ThemeContext';
