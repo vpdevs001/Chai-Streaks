@@ -60,11 +60,40 @@ export async function clearActiveUserId(): Promise<void> {
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
-export type AppTheme = 'light' | 'dark' | 'system';
+export type AppTheme =
+  | 'light'
+  | 'dark'
+  | 'system'
+  | 'forest_dark'
+  | 'forest_light'
+  | 'ocean_dark'
+  | 'ocean_light'
+  | 'lavender_dark'
+  | 'lavender_light'
+  | 'sunset_dark'
+  | 'sunset_light'
+  | 'midnight_sky'
+  | 'nord';
+
+const VALID_THEMES: AppTheme[] = [
+  'light',
+  'dark',
+  'system',
+  'forest_dark',
+  'forest_light',
+  'ocean_dark',
+  'ocean_light',
+  'lavender_dark',
+  'lavender_light',
+  'sunset_dark',
+  'sunset_light',
+  'midnight_sky',
+  'nord'
+];
 
 export async function getTheme(): Promise<AppTheme> {
   const value = await Storage.getItem(STORAGE_KEYS.THEME);
-  if (value === 'light' || value === 'dark' || value === 'system') return value;
+  if (VALID_THEMES.includes(value as AppTheme)) return value as AppTheme;
   return 'system'; // default
 }
 

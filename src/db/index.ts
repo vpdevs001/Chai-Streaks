@@ -15,60 +15,45 @@ export * from './types';
 export * from './utils';
 
 // User CRUD
-export {
-  createUser,
-  getUserById,
-  getAllUsers,
-  updateUser,
-  deleteUser,
-  ensureActiveUser
-} from './userMethods';
+export { createUser, ensureActiveUser, getUserById, updateUser } from './userMethods';
 
 // Habit CRUD
 export {
-  createHabit,
-  getHabitById,
-  getActiveHabits,
-  getArchivedHabits,
-  getHabitsWithStreaks,
-  getHabitsWithReminders,
-  updateHabit,
   archiveHabit,
-  unarchiveHabit,
+  createHabit,
+  deleteHabit,
+  getActiveHabits,
+  getHabitById,
+  getHabitsWithReminders,
+  getHabitsWithStreaks,
   setHabitNotificationId,
-  deleteHabit
+  updateHabit
 } from './habitMethods';
 
 // History CRUD + summaries
 export {
-  upsertHabitHistory,
-  markHabitCompleted,
-  getHistoryById,
-  getHistoryForDate,
-  getHistoryRange,
-  getAllHabitsHistoryForDate,
-  getRecentHistory,
-  updateHistory,
-  deleteHistoryById,
   deleteHistoryForDate,
+  getAllHabitsHistoryForDate,
+  getHabitCalendarData,
+  getHistoryForDate,
   getWeeklySummary,
-  getMonthlySummary,
-  getHabitCalendarData
+  markHabitCompleted,
+  upsertHabitHistory
 } from './historyMethods';
 
 // Preferences (AsyncStorage)
 export {
+  clearActiveUserId,
+  getActiveUserId,
+  getNotificationPermission,
+  getPreference,
+  getTheme,
   hasOnboarded,
-  setOnboarded,
+  removePreference,
   resetOnboarding,
   setActiveUserId,
-  getActiveUserId,
-  clearActiveUserId,
-  getTheme,
-  setTheme,
-  getNotificationPermission,
   setNotificationPermission,
-  getPreference,
+  setOnboarded,
   setPreference,
-  removePreference
+  setTheme
 } from './preferences';

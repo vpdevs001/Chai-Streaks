@@ -35,46 +35,9 @@ export function weekEnd(date: Date): Date {
   return end;
 }
 
-/** Returns YYYY-MM-DD strings for [start, end] inclusive */
-export function dateRangeStrings(start: Date, end: Date): string[] {
-  const dates: string[] = [];
-  const cursor = new Date(start);
-  cursor.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  while (cursor <= end) {
-    dates.push(toDateString(cursor));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return dates;
-}
-
 /** Returns the number of days in a given month (1-indexed month) */
 export function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
-}
-
-// ─── JSON helpers ─────────────────────────────────────────────────────────────
-
-/**
- * Safely parse a JSON string. Returns `fallback` on error.
- */
-export function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
-  if (!json) return fallback;
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-/** Serialise frequency_days to a JSON string for storage */
-export function encodeDays(days: number[]): string {
-  return JSON.stringify(days);
-}
-
-/** Parse frequency_days from a JSON string */
-export function decodeDays(json: string | null | undefined): number[] {
-  return safeJsonParse<number[]>(json, []);
 }
 
 // ─── Native SQLite lifecycle helpers ─────────────────────────────────────────

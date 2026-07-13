@@ -20,8 +20,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     getTheme().then(setPreferenceState);
   }, []);
 
-  const scheme: ColorScheme = preference === 'system' ? systemScheme : preference;
-  const colors = Colors[scheme];
+  const resolvedTheme = preference === 'system' ? systemScheme : preference;
+
+  const isDark =
+    preference === 'system'
+      ? systemScheme === 'dark'
+      : preference === 'dark' ||
+        preference.endsWith('_dark') ||
+        preference === 'midnight_sky' ||
+        preference === 'nord';
+
+  const scheme: ColorScheme = isDark ? 'dark' : 'light';
+  const colors = Colors[resolvedTheme] || Colors.dark;
 
   const handleSetPreference = async (p: AppTheme) => {
     setPreferenceState(p);

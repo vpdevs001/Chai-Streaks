@@ -10,44 +10,73 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import type { HabitWithStreak } from '../db/types';
+import type { HabitStatus } from '../hooks/useHabits';
 
 export default function HabitCard({
   habit,
-  completed,
+  status = 'unmarked',
   index = 0,
-  onToggle,
+  onComplete,
+  onSkip,
   onPress
 }: {
   habit: HabitWithStreak;
-  completed: boolean;
+  status?: HabitStatus;
   index?: number;
-  onToggle: () => void;
+  onComplete: () => void;
+  onSkip: () => void;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
   const scale = useSharedValue(1);
-  const checkScale = useSharedValue(completed ? 1 : 0.85);
+  const checkScale = useSharedValue(1);
+  const crossScale = useSharedValue(1);
 
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }]
   }));
 
-  const checkStyle = useAnimatedStyle(() => ({
+  const checkAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: checkScale.value }]
   }));
 
-  const handleToggle = () => {
-    scale.value = withSpring(0.93, { damping: 14, stiffness: 300 }, () => {
+  const crossAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: crossScale.value }]
+  }));
+
+  const animateBounce = (target: typeof checkScale) => {
+    target.value = withSpring(1.2, { damping: 8, stiffness: 350 }, () => {
+      target.value = withSpring(1, { damping: 10, stiffness: 280 });
+    });
+    scale.value = withSpring(0.95, { damping: 14, stiffness: 300 }, () => {
       scale.value = withSpring(1, { damping: 12, stiffness: 260 });
     });
-    checkScale.value = withSpring(1.15, { damping: 8, stiffness: 300 }, () => {
-      checkScale.value = withSpring(1, { damping: 10, stiffness: 260 });
-    });
+  };
+
+  const handleComplete = () => {
+    animateBounce(checkScale);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onToggle();
+    onComplete();
+  };
+
+  const handleSkip = () => {
+    animateBounce(crossScale);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSkip();
   };
 
   const accentColor = habit.color ?? colors.primary;
+  const isCompleted = status === 'completed';
+  const isSkipped = status === 'skipped';
+
+  // Card background/border based on status
+  const cardBg = isCompleted ? colors.cardActive : isSkipped ? colors.danger + '14' : colors.card;
+
+  const cardBorderColor = isCompleted
+    ? accentColor
+    : isSkipped
+      ? colors.danger + '66'
+      : colors.border;
 
   return (
     <Animated.View entering={FadeInDown.duration(380).delay(index * 55)}>
@@ -57,10 +86,10 @@ export default function HabitCard({
           style={[
             styles.habitCard,
             {
-              backgroundColor: completed ? colors.cardActive : colors.card,
-              borderColor: completed ? accentColor : colors.border,
-              borderWidth: completed ? 1.5 : StyleSheet.hairlineWidth,
-              opacity: completed ? 0.75 : 1
+              backgroundColor: cardBg,
+              borderColor: cardBorderColor,
+              borderWidth: isCompleted || isSkipped ? 1.5 : StyleSheet.hairlineWidth,
+              opacity: isCompleted ? 0.78 : isSkipped ? 0.72 : 1
             }
           ]}
         >
@@ -73,14 +102,18 @@ export default function HabitCard({
               style={[
                 styles.habitTitle,
                 { color: colors.text },
-                completed && styles.habitTitleDone
+                isCompleted && styles.habitTitleDone,
+                isSkipped && { color: colors.textSecondary }
               ]}
               numberOfLines={1}
             >
               {habit.title}
             </Text>
             <View style={styles.habitSubRow}>
-              {habit.current_streak > 0 && (
+              {isSkipped && (
+                <Text style={[styles.statusBadge, { color: colors.danger }]}>✕ Skipped</Text>
+              )}
+              {!isSkipped && habit.current_streak > 0 && (
                 <Text style={[styles.streakBadge, { color: '#EF4444' }]}>
                   🔥 {habit.current_streak}d
                 </Text>
@@ -91,29 +124,58 @@ export default function HabitCard({
             </View>
           </View>
 
-          {/* done button */}
-          <Pressable
-            onPress={handleToggle}
-            style={({ pressed }) => [
-              styles.checkBtn,
-              {
-                backgroundColor: completed ? accentColor : colors.inputBg,
-                borderColor: completed ? accentColor : colors.border,
-                opacity: pressed ? 0.8 : 1
-              }
-            ]}
-            hitSlop={8}
-          >
-            <Animated.Text
-              style={[
-                styles.checkIcon,
-                { color: completed ? '#fff' : colors.textMuted },
-                checkStyle
+          {/* Action buttons */}
+          <View style={styles.actions}>
+            {/* Check / Complete button */}
+            <Pressable
+              onPress={handleComplete}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                {
+                  backgroundColor: isCompleted ? accentColor : colors.inputBg,
+                  borderColor: isCompleted ? accentColor : colors.border,
+                  opacity: pressed ? 0.75 : 1
+                }
               ]}
+              hitSlop={6}
             >
-              {completed ? '✓' : '○'}
-            </Animated.Text>
-          </Pressable>
+              <Animated.Text
+                style={[
+                  styles.actionIcon,
+                  { color: isCompleted ? '#fff' : colors.textMuted },
+                  checkAnimStyle
+                ]}
+              >
+                ✓
+              </Animated.Text>
+            </Pressable>
+
+            {/* Cross / Skip button — hidden when completed */}
+            {!isCompleted && (
+              <Pressable
+                onPress={handleSkip}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  {
+                    backgroundColor: isSkipped ? colors.danger : colors.inputBg,
+                    borderColor: isSkipped ? colors.danger : colors.border,
+                    opacity: pressed ? 0.75 : 1
+                  }
+                ]}
+                hitSlop={6}
+              >
+                <Animated.Text
+                  style={[
+                    styles.actionIcon,
+                    { color: isSkipped ? '#fff' : colors.textMuted },
+                    crossAnimStyle
+                  ]}
+                >
+                  ✕
+                </Animated.Text>
+              </Pressable>
+            )}
+          </View>
         </Pressable>
       </Animated.View>
     </Animated.View>
@@ -161,6 +223,11 @@ const styles = StyleSheet.create({
     gap: SPACING.sm
   },
 
+  statusBadge: {
+    fontSize: TYPOGRAPHY.xs,
+    fontWeight: TYPOGRAPHY.bold
+  },
+
   streakBadge: {
     fontSize: TYPOGRAPHY.xs,
     fontWeight: TYPOGRAPHY.bold
@@ -172,17 +239,22 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize'
   },
 
-  checkBtn: {
-    width: 36,
-    height: 36,
+  actions: {
+    flexDirection: 'row',
+    gap: SPACING.xs
+  },
+
+  actionBtn: {
+    width: 34,
+    height: 34,
     borderRadius: RADII.full,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center'
   },
 
-  checkIcon: {
-    fontSize: 16,
+  actionIcon: {
+    fontSize: 14,
     fontWeight: TYPOGRAPHY.bold
   }
 });

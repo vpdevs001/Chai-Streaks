@@ -3,7 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import * as Notifications from 'expo-notifications';
 import {
   getHabitsWithStreaks,
-  markHabitCompleted,
+  upsertHabitHistory,
   deleteHistoryForDate,
   getHistoryForDate,
   ensureActiveUser,
@@ -12,6 +12,8 @@ import {
 import { isReleasedDbError } from '../db/utils';
 import type { HabitWithStreak, HabitHistory, User } from '../db/types';
 import { todayString } from '../utils/dateHelpers';
+
+export type HabitStatus = 'completed' | 'skipped' | 'unmarked';
 
 export function useHabits() {
   const db = useSQLiteContext();
@@ -74,14 +76,20 @@ export function useHabits() {
     refresh();
   }, [refresh]);
 
+  /**
+   * Toggle a habit to a specific status.
+   * - If habit currently has the same status → remove (unmark).
+   * - Otherwise → set to the given status.
+   */
   const toggleHabit = useCallback(
-    async (habitId: number) => {
+    async (habitId: number, targetStatus: 'completed' | 'skipped' = 'completed') => {
       if (!userId) return;
       try {
         const today = todayString();
         const existing = todayHistory[habitId];
-        if (existing && existing.status === 'completed') {
-          // un-complete
+
+        if (existing && existing.status === targetStatus) {
+          // Same status tapped again → unmark
           await deleteHistoryForDate(db, habitId, today);
           if (!isMounted.current) return;
           setTodayHistory((prev) => {
@@ -90,10 +98,18 @@ export function useHabits() {
             return next;
           });
         } else {
-          const hist = await markHabitCompleted(db, habitId, userId);
+          // Set new status (completed or skipped)
+          const hist = await upsertHabitHistory(db, {
+            habit_id: habitId,
+            user_id: userId,
+            date: today,
+            status: targetStatus,
+            completion_count: targetStatus === 'completed' ? 1 : 0
+          });
           if (!isMounted.current) return;
           setTodayHistory((prev) => ({ ...prev, [habitId]: hist }));
         }
+
         // refresh streaks
         const updated = await getHabitsWithStreaks(db, userId);
         if (!isMounted.current) return;
@@ -103,6 +119,15 @@ export function useHabits() {
       }
     },
     [db, userId, todayHistory]
+  );
+
+  const getHabitStatus = useCallback(
+    (habitId: number): HabitStatus => {
+      const h = todayHistory[habitId];
+      if (!h) return 'unmarked';
+      return h.status as HabitStatus;
+    },
+    [todayHistory]
   );
 
   const isCompleted = useCallback(
@@ -126,6 +151,7 @@ export function useHabits() {
     loading,
     refresh,
     toggleHabit,
+    getHabitStatus,
     isCompleted,
     completedCount,
     completionRate

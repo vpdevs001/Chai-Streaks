@@ -1,90 +1,196 @@
-# ChaiStreaks ☕
+# ChaiStreaks ☕🔥
 
-A habit-tracking app built with Expo Router + SQLite. "Build habits one cup of chai at a time."
+A premium, offline-first **habit tracking** mobile app built with Expo (React Native). Track daily habits, visualise streaks on a GitHub-style heatmap, and stay motivated with a beautiful multi-theme UI.
 
-## Status: MVP (habits + streaks + analytics) plus local & push notifications. A few stretch goals remain.
+---
 
-This project was built against `IMPLEMENTATION-PLAN.md` (local reminders + push, deep linking, permissions). Phases 1–5 of that plan are implemented; see [Feature Checklist](#feature-checklist) below for exactly what's built vs. outstanding.
+## ✨ Features
 
-## Get started
+- **Create & manage habits** — with custom emoji icon, accent color, and optional description
+- **Flexible frequency** — daily, weekly (pick days), or fully custom
+- **Check / Cross marking** — mark a habit as ✓ Complete _or_ ✕ Skipped; tap again to unmark
+- **Multi-time reminders** — set multiple specific notification times per habit, or switch to an hourly-interval mode (e.g. every 2 h from 09:00–18:00)
+- **GitHub-style heatmap** — 18-week activity grid with month labels, 4-level colour ramp, and interactive cell tap showing date details
+- **Progress charts** — 7-day and 30-day bar charts filtered from your account creation date (no phantom past days)
+- **Chai Score™** — a gamified score combining streaks, completion rate, and habit count
+- **10+ app themes** — Dark, Light, Forest, Ocean, Lavender, Sunset, Midnight Sky, Nord, and more, each with a live colour preview
+- **Quiet hours** — suppress notifications during sleep or focus hours
+- **Profile card** — custom name and avatar photo
+- **Onboarding flow** — first-launch setup wizard
+- **Fully offline** — all data stored locally via SQLite (expo-sqlite SDK 55)
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 🛠 Tech Stack
 
-2. Start the app
+| Layer                | Technology                                                                        |
+| -------------------- | --------------------------------------------------------------------------------- |
+| Framework            | [Expo SDK 55](https://docs.expo.dev/versions/v55.0.0/)                            |
+| Language             | TypeScript                                                                        |
+| Navigation           | [Expo Router v4](https://docs.expo.dev/router/introduction/) (file-based routing) |
+| Database             | [expo-sqlite](https://docs.expo.dev/versions/v55.0.0/sdk/sqlite/) (local SQLite)  |
+| Preferences          | `expo-sqlite/kv-store` (AsyncStorage replacement)                                 |
+| Animations           | `react-native-reanimated` v4                                                      |
+| Gestures             | `react-native-gesture-handler`                                                    |
+| Notifications        | `expo-notifications`                                                              |
+| Haptics              | `expo-haptics`                                                                    |
+| Date Picker          | `@react-native-community/datetimepicker`                                          |
+| Image Picker         | `expo-image-picker`                                                               |
+| Linting / Formatting | Prettier                                                                          |
+| Package Manager      | Bun                                                                               |
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 📁 Folder Structure
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go) — note: **push notifications will not work in Expo Go**; a dev build is required to test push (local reminders do work in Expo Go).
+```
+chai-streaks/
+├── app.json               # Expo app configuration (name, icons, plugins)
+├── eas.json               # EAS Build profiles
+├── package.json           # Dependencies and scripts
+├── tsconfig.json          # TypeScript configuration
+├── assets/                # App icons, splash screens, and images
+├── scripts/
+│   └── send-test-push.ts  # Dev helper: send a test push notification
+└── src/
+    ├── app/               # Expo Router screens (file = route)
+    │   ├── _layout.tsx    # Root navigator: SQLite + Theme providers, notification setup
+    │   ├── index.tsx      # Entry redirect (→ onboarding or tabs)
+    │   ├── onboarding.tsx # First-launch wizard: name, avatar, first habit
+    │   ├── (tabs)/        # Bottom-tab screens
+    │   │   ├── _layout.tsx    # Tab bar configuration and theming
+    │   │   ├── home.tsx       # Today's habits list with streak stats
+    │   │   ├── progress.tsx   # Bar charts, Chai Score, all-time stats
+    │   │   └── settings.tsx   # Profile, themes, notifications, quiet hours, reset
+    │   └── habit/
+    │       ├── create.tsx     # Modal: create a new habit
+    │       └── [id].tsx       # Modal: edit habit, view heatmap, danger zone
+    ├── components/        # Reusable UI components
+    │   ├── BarChart.tsx           # 7-day / 30-day bar chart
+    │   ├── BigStatCard.tsx        # Large number stat card (streak, completions)
+    │   ├── CalendarHeatmap.tsx    # GitHub-style 18-week activity heatmap
+    │   ├── ChaiScoreBanner.tsx    # Animated Chai Score display
+    │   ├── CompletionSummary.tsx  # Text summary of period completion
+    │   ├── ConfirmDialog.tsx      # Reusable confirmation modal
+    │   ├── EmptyHabits.tsx        # Empty state illustration for no habits
+    │   ├── HabitCard.tsx          # Habit row with ✓/✕ action buttons
+    │   ├── HabitDangerZone.tsx    # Archive / delete action buttons
+    │   ├── HabitFormAppearance.tsx  # Icon and colour picker section
+    │   ├── HabitFormFrequency.tsx   # Frequency type and day selector section
+    │   ├── HomeHeader.tsx         # Greeting + profile avatar header
+    │   ├── Label.tsx              # Form field label
+    │   ├── PeriodTabSwitcher.tsx  # 7d / 30d tab pill
+    │   ├── ProfileCard.tsx        # Editable profile name/avatar card
+    │   ├── ReminderPicker.tsx     # Multi-time / hourly reminder selector
+    │   ├── ReminderTimePicker.tsx # Legacy single-time picker (kept for reference)
+    │   ├── ScreenHeader.tsx       # Shared screen title + subtitle header
+    │   ├── Section.tsx            # Titled card section wrapper
+    │   ├── SettingsRow.tsx        # Tappable settings list row
+    │   ├── SettingsSectionHeader.tsx  # Settings group heading
+    │   ├── StatCard.tsx           # Compact stat pill (streak, best, score)
+    │   ├── TabIcon.tsx            # Bottom tab icon with label
+    │   ├── ThemePicker.tsx        # Theme grid with colour previews
+    │   └── TodayProgressCard.tsx  # Ring / progress bar for today
+    ├── constants/
+    │   └── index.ts       # SPACING, RADII, TYPOGRAPHY design tokens
+    ├── contexts/
+    │   └── ThemeContext.tsx  # React context: resolves theme → colors, scheme
+    ├── db/                # All database logic
+    │   ├── index.ts         # Single barrel export for the entire DB layer
+    │   ├── schema.ts        # Table DDL, index/trigger creation, migration runner
+    │   ├── types.ts         # TypeScript interfaces: User, Habit, HabitHistory, …
+    │   ├── habitMethods.ts  # CRUD for `habits` table + streak computation helper
+    │   ├── historyMethods.ts  # CRUD for `habit_history`, weekly/monthly summaries, heatmap data
+    │   ├── userMethods.ts   # CRUD for `users` table, ensureActiveUser
+    │   ├── preferences.ts   # Key-value storage (theme, user id, onboarding, notifications)
+    │   └── utils.ts         # Date helpers, JSON helpers, SQL clause builder, streak calculator
+    ├── hooks/
+    │   ├── useHabits.ts     # Loads habits + today's history; toggleHabit (complete/skip/unmark)
+    │   ├── useNotifications.ts  # Permission management + push token registration
+    │   └── useStats.ts      # Builds 7d / 30d bar data filtered to account creation date
+    ├── lib/
+    │   └── notifications/
+    │       ├── deepLink.ts  # Resolves notification tap → app route
+    │       ├── schedule.ts  # Schedule / cancel / reconcile habit reminders (multi-time + hourly)
+    │       └── setup.ts     # Notification handler config + Android channel setup
+    ├── theme/
+    │   └── index.ts        # Colors (dark/light/forest/ocean/lavender/sunset/midnight/nord),
+    │                       # HABIT_COLORS palette (24 colors), PRESET_ICONS (60 emojis)
+    └── utils/
+        ├── chaiScore.ts    # Chai Score formula
+        └── dateHelpers.ts  # Greeting, date formatting, getLast7Days, getLast30Days
+```
 
-This project uses [file-based routing](https://docs.expo.dev/router/introduction) via `src/app`.
+---
 
-## Feature checklist
+## 🚀 Getting Started
 
-### ✅ Built — Core app
+### Prerequisites
 
-- Habit CRUD — create, edit, archive, delete (`src/db/habitMethods.ts`, `src/app/habit/create.tsx`, `src/app/habit/[id].tsx`)
-- Habit fields: title, description, emoji/icon, color, frequency (`daily` / `weekly` / `custom`), target count
-- SQLite persistence, survives app restart (`expo-sqlite`, `src/db/`)
-- Mark-done + streak logic — current streak and longest streak computed from completion history (`computeStreaks()` in `habitMethods.ts`)
-- Progress/analytics — 7/30/all-time bar charts, completion %, "Chai Score" (`src/app/(tabs)/progress.tsx`, `src/utils/chaiScore.ts`)
-- Onboarding flow, theme system (system/light/dark), settings shell
+- [Bun](https://bun.sh) or npm/yarn
+- [Expo Go](https://expo.dev/go) on iOS/Android **or** a simulator/emulator
+- Node 20+
 
-### ✅ Built — Notifications (local + push)
+### Install
 
-- **Local reminders**: scheduled on habit save/edit and cancelled on delete/archive (`src/lib/notifications/schedule.ts`, wired into `habit/create.tsx` and `habit/[id].tsx`). Reminder time is picked with a native time picker (`@react-native-community/datetimepicker`, `src/components/ReminderTimePicker.tsx`) instead of free-text entry.
-- **Notification ID persistence**: `habits.notification_id` stores a JSON-encoded array of IDs (`encodeIds`/`decodeIds` in `schedule.ts`), so a weekly habit reminding on multiple days schedules and tracks one ID per day. No schema migration was needed.
-- **Cancel/reschedule on edit**, **cancel-only-this-habit on delete/archive** — see `handleSave` / `handleArchive` / `handleDelete` in `habit/[id].tsx`.
-- **Foreground notification handler** and **Android notification channel** (high-importance, created before the permission request) — `src/lib/notifications/setup.ts`, wired into `src/app/_layout.tsx` on boot.
-- **Permission flow**: Settings shows a real granted/denied/undetermined row (`src/app/(tabs)/settings.tsx`) with request-permission and "open system settings" actions.
-- **Reconciliation on permission grant**: habits whose reminders couldn't be scheduled while permission was undetermined/denied are rescheduled the moment permission is granted (`reconcileHabitReminders` in `schedule.ts`), and again defensively on app boot in case permission was granted from system Settings while the app was closed.
-- **Deep linking**: tapping a notification (foreground, background, or cold start) routes to `/habit/[id]` via `resolveNotificationRoute` (`src/lib/notifications/deepLink.ts`), wired into `_layout.tsx`.
-- **Push notifications**: token registration + storage (`src/lib/notifications/push.ts`), Expo Push Token display/copy UI in Settings, and a standalone test script (`scripts/send-test-push.ts`, calls the Expo push HTTP API directly rather than pulling in `expo-server-sdk`).
-- Module layout: `src/lib/notifications/{setup,schedule,push,deepLink}.ts`, exposed through `src/hooks/useNotifications.ts`.
+```bash
+bun install
+```
 
-### 🎁 Stretch goals
+### Run (development)
 
-| Goal                                       | Status                                                               |
-| ------------------------------------------- | --------------------------------------------------------------------- |
-| Habit analytics                             | ✅ Built                                                             |
-| Calendar-style streak view                  | ✅ Built (`src/components/CalendarHeatmap.tsx`, in `habit/[id].tsx`) |
-| App badge (pending habits)                  | ✅ Built (`setBadgeCountAsync` in `useHabits.ts`)                    |
-| Quiet hours / do-not-disturb window         | ✅ Built (schedule-time shifting in `schedule.ts` + Settings toggle) |
-| Snooze action                               | ❌ Not built                                                         |
-| iOS action buttons (Done / Snooze)          | ❌ Not built                                                         |
-| Image push notification                     | ❌ Not built                                                         |
-| Node push server (`expo-server-sdk`)        | ❌ Not built — test script uses a direct HTTP call instead           |
-| Push receipts handling                      | ❌ Not built                                                         |
-| Drop invalid tokens (`DeviceNotRegistered`) | ❌ Not built                                                         |
-| Daily summary push                          | ❌ Not built                                                         |
+```bash
+bun run start          # Expo Metro bundler
+bun run ios            # iOS Simulator
+bun run android        # Android Emulator
+```
 
-## Architecture notes
+### Build (production)
 
-Habit logic lives in `src/db/` (SQLite-backed); notification logic lives in `src/lib/notifications/`, kept separate rather than restructuring the existing habit code. `src/hooks/useNotifications.ts` exposes permission status, request/open-settings, and the push token, so screens don't talk to `expo-notifications` directly.
+Configure your EAS credentials in `eas.json` and run:
 
-## Other setup steps
+```bash
+eas build --profile production --platform ios
+eas build --profile production --platform android
+```
 
-- ESLint: `npx expo lint`, or see ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- Unit testing: see ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- TypeScript: see ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+---
 
-## Learn more
+## 🗄 Database Schema
 
-- [Expo documentation](https://docs.expo.dev/)
-- [Expo Notifications docs (v55)](https://docs.expo.dev/versions/v55.0.0/sdk/notifications/) — required reading before implementing the notifications feature
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/)
+Three tables, all with cascading deletes from `users`:
 
-## Join the community
+| Table           | Purpose                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
+| `users`         | Profile (name, avatar URI)                                              |
+| `habits`        | Habit definitions (title, icon, color, frequency, reminders)            |
+| `habit_history` | One row per (habit, date) — status: `completed` / `skipped` / `partial` |
 
-- [Expo on GitHub](https://github.com/expo/expo)
-- [Discord community](https://chat.expo.dev)
+Migrations are tracked via SQLite `PRAGMA user_version`. To add a migration, push a new entry to the `MIGRATIONS` array in `src/db/schema.ts`.
+
+---
+
+## 🎨 App Themes
+
+Themes are defined in `src/theme/index.ts` and selected via Settings → Appearance.
+
+| Theme          | Mode  | Accent         |
+| -------------- | ----- | -------------- |
+| Classic Dark   | Dark  | 🟠 Orange      |
+| Classic Light  | Light | 🟠 Orange      |
+| Forest Dark    | Dark  | 🟢 Green       |
+| Forest Light   | Light | 🟢 Green       |
+| Ocean Dark     | Dark  | 🔵 Sky Blue    |
+| Ocean Light    | Light | 🔵 Sky Blue    |
+| Lavender Dark  | Dark  | 🟣 Purple      |
+| Lavender Light | Light | 🟣 Purple      |
+| Sunset Dark    | Dark  | 🌹 Rose        |
+| Sunset Light   | Light | 🌹 Rose        |
+| Midnight Sky   | Dark  | 💜 Indigo      |
+| Nord           | Dark  | 🩵 Arctic Blue |
+
+---
+
+## 📄 License
+
+MIT — feel free to use, modify, and ship.

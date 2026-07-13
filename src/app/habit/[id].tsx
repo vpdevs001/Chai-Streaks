@@ -38,7 +38,7 @@ import CalendarHeatmap from '../../components/CalendarHeatmap';
 import HabitFormAppearance from '../../components/HabitFormAppearance';
 import HabitFormFrequency from '../../components/HabitFormFrequency';
 import HabitDangerZone from '../../components/HabitDangerZone';
-import ReminderTimePicker from '../../components/ReminderTimePicker';
+import ReminderPicker from '../../components/ReminderPicker';
 
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -300,7 +300,7 @@ export default function EditHabitScreen() {
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>
-              <ReminderTimePicker value={reminderTime} onChange={setReminderTime} />
+              <ReminderPicker value={reminderTime} onChange={setReminderTime} />
             </Section>
 
             {/* 90-Day Streak Heatmap View */}

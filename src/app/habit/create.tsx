@@ -23,7 +23,7 @@ import Section from '../../components/Section';
 import Label from '../../components/Label';
 import HabitFormAppearance from '../../components/HabitFormAppearance';
 import HabitFormFrequency from '../../components/HabitFormFrequency';
-import ReminderTimePicker from '../../components/ReminderTimePicker';
+import ReminderPicker from '../../components/ReminderPicker';
 
 export default function CreateHabitScreen() {
   const { colors } = useTheme();
@@ -187,7 +187,7 @@ export default function CreateHabitScreen() {
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>
-              <ReminderTimePicker value={reminderTime} onChange={setReminderTime} />
+              <ReminderPicker value={reminderTime} onChange={setReminderTime} />
             </Section>
 
             {error ? (

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
-import { getActiveUserId, getAllHabitsHistoryForDate, getActiveHabits } from '../db';
+import { getActiveUserId, getAllHabitsHistoryForDate, getActiveHabits, getUserById } from '../db';
 import { isReleasedDbError } from '../db/utils';
-import { getLast7Days, getLast30Days, todayString } from '../utils/dateHelpers';
+import { getLast7Days, getLast30Days } from '../utils/dateHelpers';
 
 export interface DayBar {
   date: string;
@@ -29,12 +29,21 @@ export function useStats() {
     try {
       const uid = await getActiveUserId();
       if (!uid) return;
+
+      // Get user so we can filter by account creation date
+      const user = await getUserById(db, uid);
+      const accountCreatedDate = user?.created_at
+        ? user.created_at.slice(0, 10) // Extract YYYY-MM-DD
+        : '2000-01-01';
+
       const habits = await getActiveHabits(db, uid);
       const total = habits.length;
 
       const buildBars = async (days: string[]): Promise<DayBar[]> => {
+        // Filter out days before account creation
+        const filteredDays = days.filter((d) => d >= accountCreatedDate);
         return Promise.all(
-          days.map(async (date) => {
+          filteredDays.map(async (date) => {
             const hist = await getAllHabitsHistoryForDate(db, uid, date);
             const count = hist.filter((h) => h.status === 'completed').length;
             return { date, count, total };

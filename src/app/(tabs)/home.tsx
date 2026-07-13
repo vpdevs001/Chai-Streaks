@@ -30,7 +30,7 @@ export default function HomeScreen() {
     loading,
     refresh,
     toggleHabit,
-    isCompleted,
+    getHabitStatus,
     completedCount,
     completionRate
   } = useHabits();
@@ -137,9 +137,10 @@ export default function HomeScreen() {
         renderItem={({ item: habit, index }) => (
           <HabitCard
             habit={habit}
-            completed={isCompleted(habit.id)}
+            status={getHabitStatus(habit.id)}
             index={index}
-            onToggle={() => toggleHabit(habit.id)}
+            onComplete={() => toggleHabit(habit.id, 'completed')}
+            onSkip={() => toggleHabit(habit.id, 'skipped')}
             onPress={() => router.push(`/habit/${habit.id}`)}
           />
         )}
