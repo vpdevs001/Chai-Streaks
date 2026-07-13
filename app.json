@@ -4,18 +4,16 @@
     "slug": "chai-streaks",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/app-logo.png",
     "scheme": "chai-streaks",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/app-logo.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#208AEF",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#0D0D0D",
+        "foregroundImage": "./assets/images/app-logo.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.vedpandeydev.chaistreaks"
@@ -29,10 +27,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+          "backgroundColor": "#FAFAF8",
+          "image": "./assets/images/app-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#0D0D0D",
+            "image": "./assets/images/app-logo.png"
           }
         }
       ],
