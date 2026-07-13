@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import { HABIT_COLORS, PRESET_ICONS } from '../theme';

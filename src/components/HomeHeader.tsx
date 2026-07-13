@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
@@ -36,13 +35,13 @@ export default function HomeHeader({ colors, user }: Props) {
       >
         {user?.avatar_uri ? (
           // A real photo was set during onboarding/settings — show it.
-          (<Image source={{ uri: user.avatar_uri }} style={styles.avatarImage} contentFit="cover" />)
+          <Image source={{ uri: user.avatar_uri }} style={styles.avatarImage} contentFit="cover" />
         ) : initials ? (
           // Named but no photo — show their initial instead of a generic icon.
-          (<Text style={[styles.avatarInitials, { color: colors.primary }]}>{initials}</Text>)
+          <Text style={[styles.avatarInitials, { color: colors.primary }]}>{initials}</Text>
         ) : (
           // No user set up at all — genuinely a guest.
-          (<Text style={{ fontSize: 22 }}>👤</Text>)
+          <Text style={{ fontSize: 22 }}>👤</Text>
         )}
       </Pressable>
     </View>

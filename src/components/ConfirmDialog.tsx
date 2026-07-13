@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Modal, Animated, StyleSheet, View, Text, Pressable } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';

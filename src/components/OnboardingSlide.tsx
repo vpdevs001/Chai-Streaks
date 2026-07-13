@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, StyleSheet, Dimensions, Animated } from 'react-native';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import type { ThemeColors } from '../theme';
