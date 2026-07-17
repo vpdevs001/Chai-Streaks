@@ -6,7 +6,8 @@ import { getLast7Days, getLast30Days } from '../utils/dateHelpers';
 
 export interface DayBar {
   date: string;
-  count: number;
+  count: number; // completed
+  skipped: number; // explicitly skipped
   total: number;
 }
 
@@ -37,7 +38,6 @@ export function useStats() {
         : '2000-01-01';
 
       const habits = await getActiveHabits(db, uid);
-      const total = habits.length;
 
       const buildBars = async (days: string[]): Promise<DayBar[]> => {
         // Filter out days before account creation
@@ -46,7 +46,12 @@ export function useStats() {
           filteredDays.map(async (date) => {
             const hist = await getAllHabitsHistoryForDate(db, uid, date);
             const count = hist.filter((h) => h.status === 'completed').length;
-            return { date, count, total };
+            const skipped = hist.filter((h) => h.status === 'skipped').length;
+            // Only count habits that existed on this day — a habit added
+            // later shouldn't inflate the denominator for earlier days
+            // (and drag down their completion %) before it existed.
+            const total = habits.filter((h) => h.created_at.slice(0, 10) <= date).length;
+            return { date, count, skipped, total };
           })
         );
       };

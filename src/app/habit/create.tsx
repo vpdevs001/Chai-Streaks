@@ -17,12 +17,13 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { HABIT_COLORS } from '../../theme';
 import { createHabit, ensureActiveUser, setHabitNotificationId } from '../../db';
-import type { FrequencyType } from '../../db/types';
+import type { FrequencyType, HabitPriority } from '../../db/types';
 import { scheduleHabitReminders, encodeIds } from '../../lib/notifications/schedule';
 import Section from '../../components/Section';
 import Label from '../../components/Label';
 import HabitFormAppearance from '../../components/HabitFormAppearance';
 import HabitFormFrequency from '../../components/HabitFormFrequency';
+import HabitFormPriority from '../../components/HabitFormPriority';
 import ReminderPicker from '../../components/ReminderPicker';
 
 export default function CreateHabitScreen() {
@@ -36,6 +37,7 @@ export default function CreateHabitScreen() {
   const [frequency, setFrequency] = useState<FrequencyType>('daily');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [targetCount, setTargetCount] = useState(1);
+  const [priority, setPriority] = useState<HabitPriority>('medium');
   const [reminderTime, setReminderTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -68,6 +70,7 @@ export default function CreateHabitScreen() {
           frequency === 'weekly' || frequency === 'custom' ? selectedDays : []
         ),
         target_count: targetCount,
+        priority,
         reminder_status: reminderTime ? 'enabled' : 'disabled',
         reminder_time: reminderTime || undefined
       });
@@ -184,6 +187,8 @@ export default function CreateHabitScreen() {
               onToggleDay={toggleDay}
               onTargetCountChange={setTargetCount}
             />
+
+            <HabitFormPriority colors={colors} priority={priority} onChange={setPriority} />
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>

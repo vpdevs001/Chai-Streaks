@@ -113,10 +113,19 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
       await db.execAsync(CREATE_INDEXES);
       await db.execAsync(CREATE_TRIGGERS);
     }
+  },
+  {
+    name: 'v2_add_habit_priority',
+    run: async (db) => {
+      // 'low' | 'medium' | 'high' — drives the Chai Score weighting (see
+      // utils/chaiScore.ts). Existing habits default to 'medium' so nobody's
+      // score jumps around the moment this migration runs.
+      await db.execAsync(`ALTER TABLE habits ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium';`);
+    }
   }
   // Future migrations go here, e.g.:
   // {
-  //   name: 'v2_add_habit_tags',
+  //   name: 'v3_add_habit_tags',
   //   run: async (db) => {
   //     await db.execAsync(`ALTER TABLE habits ADD COLUMN tags TEXT DEFAULT '[]';`);
   //   },

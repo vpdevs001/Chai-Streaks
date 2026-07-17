@@ -25,7 +25,7 @@ import {
   getHabitCalendarData
 } from '../../db';
 import { isReleasedDbError } from '../../db/utils';
-import type { Habit, FrequencyType } from '../../db/types';
+import type { Habit, FrequencyType, HabitPriority } from '../../db/types';
 import {
   cancelHabitReminders,
   scheduleHabitReminders,
@@ -37,6 +37,7 @@ import Label from '../../components/Label';
 import CalendarHeatmap from '../../components/CalendarHeatmap';
 import HabitFormAppearance from '../../components/HabitFormAppearance';
 import HabitFormFrequency from '../../components/HabitFormFrequency';
+import HabitFormPriority from '../../components/HabitFormPriority';
 import HabitDangerZone from '../../components/HabitDangerZone';
 import ReminderPicker from '../../components/ReminderPicker';
 
@@ -60,6 +61,7 @@ export default function EditHabitScreen() {
   const [frequency, setFrequency] = useState<FrequencyType>('daily');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [targetCount, setTargetCount] = useState(1);
+  const [priority, setPriority] = useState<HabitPriority>('medium');
   const [reminderTime, setReminderTime] = useState('');
   const [history, setHistory] = useState<Record<string, 'completed' | 'skipped' | 'partial'>>({});
 
@@ -81,6 +83,7 @@ export default function EditHabitScreen() {
           setFrequency(h.frequency_type);
           setSelectedDays(JSON.parse(h.frequency_days || '[]'));
           setTargetCount(h.target_count);
+          setPriority(h.priority ?? 'medium');
           setReminderTime(h.reminder_time ?? '');
         }
       })
@@ -130,6 +133,7 @@ export default function EditHabitScreen() {
           frequency === 'weekly' || frequency === 'custom' ? selectedDays : []
         ),
         target_count: targetCount,
+        priority,
         reminder_status: reminderTime ? 'enabled' : 'disabled',
         reminder_time: reminderTime || null,
         notification_id: null // Reset to empty first, will be set below if enabled
@@ -297,6 +301,8 @@ export default function EditHabitScreen() {
               onToggleDay={toggleDay}
               onTargetCountChange={setTargetCount}
             />
+
+            <HabitFormPriority colors={colors} priority={priority} onChange={setPriority} />
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>

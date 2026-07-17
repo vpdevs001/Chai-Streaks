@@ -15,7 +15,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useHabits } from '../../hooks/useHabits';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
-import { computeChaiScore } from '../../utils/chaiScore';
+import { computeChaiScore, habitsToChaiScoreInputs } from '../../utils/chaiScore';
 import HomeHeader from '../../components/HomeHeader';
 import TodayProgressCard from '../../components/TodayProgressCard';
 import StatCard from '../../components/StatCard';
@@ -43,7 +43,7 @@ export default function HomeScreen() {
 
   const maxStreak = habits.reduce((m, h) => Math.max(m, h.current_streak), 0);
   const bestStreak = habits.reduce((m, h) => Math.max(m, h.longest_streak), 0);
-  const chaiScore = computeChaiScore(maxStreak, completionRate, habits.length);
+  const chaiScore = computeChaiScore(habitsToChaiScoreInputs(habits));
   const fabAnim = useRef(new Animated.Value(1)).current;
 
   const handleFabPress = () => {

@@ -14,7 +14,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useStats } from '../../hooks/useStats';
 import { useHabits } from '../../hooks/useHabits';
 import { SPACING, TYPOGRAPHY } from '../../constants';
-import { computeChaiScore } from '../../utils/chaiScore';
+import { computeChaiScore, habitsToChaiScoreInputs } from '../../utils/chaiScore';
 import ChaiScoreBanner from '../../components/ChaiScoreBanner';
 import PeriodTabSwitcher from '../../components/PeriodTabSwitcher';
 import BarChart from '../../components/BarChart';
@@ -26,7 +26,7 @@ export default function ProgressScreen() {
   const { colors } = useTheme();
   const [tab, setTab] = useState<'7' | '30'>('7');
   const { bars7, bars30, loading, refresh } = useStats();
-  const { habits, completionRate } = useHabits();
+  const { habits } = useHabits();
 
   useFocusEffect(
     useCallback(() => {
@@ -38,11 +38,12 @@ export default function ProgressScreen() {
   const maxStreak = habits.reduce((m, h) => Math.max(m, h.current_streak), 0);
   const bestStreak = habits.reduce((m, h) => Math.max(m, h.longest_streak), 0);
   const totalCompletions = habits.reduce((s, h) => s + h.total_completions, 0);
-  const chaiScore = computeChaiScore(maxStreak, completionRate, habits.length);
+  const chaiScore = computeChaiScore(habitsToChaiScoreInputs(habits));
   const barsCurrent = tab === '7' ? bars7 : bars30;
   const totalPossible = barsCurrent.reduce((s, b) => s + b.total, 0);
   const totalDone = barsCurrent.reduce((s, b) => s + b.count, 0);
   const periodRate = totalPossible > 0 ? totalDone / totalPossible : 0;
+  const failureRate = totalPossible > 0 ? 1 - periodRate : 0;
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
@@ -102,6 +103,13 @@ export default function ProgressScreen() {
             value={`${Math.round(periodRate * 100)}%`}
             sub={`${tab === '7' ? '7' : '30'}-day period`}
             color="#8B5CF6"
+          />
+          <BigStatCard
+            emoji="📉"
+            label="Failure Rate"
+            value={`${Math.round(failureRate * 100)}%`}
+            sub={`${tab === '7' ? '7' : '30'}-day period`}
+            color={colors.danger}
           />
         </View>
 

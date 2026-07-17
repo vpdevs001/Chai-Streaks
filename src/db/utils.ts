@@ -17,6 +17,24 @@ export function toDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Returns every calendar date string from `start` to `end`, inclusive
+ * (ascending). Empty array if `start` is after `end`. Both bounds must be
+ * `YYYY-MM-DD` — safe to compare lexicographically since that format sorts
+ * the same as chronological order.
+ */
+export function enumerateDates(start: string, end: string): string[] {
+  if (start > end) return [];
+  const dates: string[] = [];
+  const cursor = new Date(`${start}T00:00:00`);
+  const endDate = new Date(`${end}T00:00:00`);
+  while (cursor <= endDate) {
+    dates.push(toDateString(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
 /** Returns the Monday of the week containing `date` */
 export function weekStart(date: Date): Date {
   const d = new Date(date);

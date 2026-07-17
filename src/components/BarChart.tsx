@@ -1,7 +1,8 @@
-import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Dimensions, Pressable } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { SPACING, TYPOGRAPHY } from '../constants';
-import { shortDayLabel, shortMonthDay } from '../utils/dateHelpers';
+import { formatDayLabel, shortDayLabel, shortMonthDay } from '../utils/dateHelpers';
 import type { DayBar } from '../hooks/useStats';
 
 const { width } = Dimensions.get('window');
@@ -11,8 +12,15 @@ const BAR_W_30 = 32;
 
 export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '30' }) {
   const { colors } = useTheme();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const barW =
     mode === '7' ? (width - SPACING.base * 2 - SPACING.lg * 2 - BAR_GAP * 6) / 7 : BAR_W_30;
+
+  const selectedBar = selectedDate ? (bars.find((b) => b.date === selectedDate) ?? null) : null;
+  const hasTrackedHabits = !!selectedBar && selectedBar.total > 0;
+  const selectedPct = hasTrackedHabits
+    ? Math.round((selectedBar!.count / selectedBar!.total) * 100)
+    : 0;
 
   return (
     <View style={styles.chartWrap}>
@@ -36,9 +44,16 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
           const fillH = bar.total > 0 ? (bar.count / bar.total) * CHART_H : 0;
           const isToday = i === bars.length - 1;
           const isEmpty = bar.count === 0;
+          const isSelected = selectedDate === bar.date;
 
           return (
-            <View style={[styles.barCol, { width: barW, gap: BAR_GAP / 2 }]}>
+            <Pressable
+              onPress={() => setSelectedDate(isSelected ? null : bar.date)}
+              style={({ pressed }) => [
+                styles.barCol,
+                { width: barW, gap: BAR_GAP / 2, opacity: pressed ? 0.7 : 1 }
+              ]}
+            >
               {/* count label on top for 7-day */}
               {mode === '7' && bar.count > 0 && (
                 <Text style={[styles.barCountLabel, { color: colors.textSecondary }]}>
@@ -48,7 +63,12 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
               <View
                 style={[
                   styles.barTrack,
-                  { height: CHART_H, backgroundColor: colors.border + '55' }
+                  {
+                    height: CHART_H,
+                    backgroundColor: colors.border + '55',
+                    borderWidth: isSelected ? 1.5 : 0,
+                    borderColor: colors.text
+                  }
                 ]}
               >
                 <View
@@ -69,7 +89,10 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
               </View>
               {mode === '7' ? (
                 <Text
-                  style={[styles.barLabel, { color: isToday ? colors.primary : colors.textMuted }]}
+                  style={[
+                    styles.barLabel,
+                    { color: isSelected || isToday ? colors.primary : colors.textMuted }
+                  ]}
                 >
                   {shortDayLabel(bar.date)}
                 </Text>
@@ -78,7 +101,7 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
                   style={[
                     styles.barLabel,
                     {
-                      color: isToday ? colors.primary : colors.textMuted,
+                      color: isSelected || isToday ? colors.primary : colors.textMuted,
                       fontSize: TYPOGRAPHY.xs - 1
                     }
                   ]}
@@ -88,10 +111,38 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
               ) : (
                 <View style={{ height: 12 }} />
               )}
-            </View>
+            </Pressable>
           );
         }}
       />
+
+      {selectedBar && (
+        <View
+          style={[
+            styles.selectedInfo,
+            { backgroundColor: colors.inputBg, borderColor: colors.border }
+          ]}
+        >
+          <Text style={[styles.selectedInfoDate, { color: colors.text }]}>
+            {formatDayLabel(selectedBar.date)}
+          </Text>
+          {hasTrackedHabits ? (
+            <>
+              <Text style={[styles.selectedInfoPct, { color: colors.primary }]}>
+                {selectedPct}%
+              </Text>
+              <Text style={[styles.selectedInfoDetail, { color: colors.textSecondary }]}>
+                {selectedBar.count}/{selectedBar.total} completed
+                {selectedBar.skipped > 0 ? ` · ${selectedBar.skipped} skipped` : ''}
+              </Text>
+            </>
+          ) : (
+            <Text style={[styles.selectedInfoDetail, { color: colors.textSecondary }]}>
+              No habits tracked yet
+            </Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -143,5 +194,30 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.medium,
     marginTop: 4,
     textAlign: 'center'
+  },
+
+  selectedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth
+  },
+
+  selectedInfoDate: {
+    fontSize: TYPOGRAPHY.sm,
+    fontWeight: TYPOGRAPHY.semibold
+  },
+
+  selectedInfoPct: {
+    fontSize: TYPOGRAPHY.md,
+    fontWeight: TYPOGRAPHY.heavy
+  },
+
+  selectedInfoDetail: {
+    fontSize: TYPOGRAPHY.xs,
+    marginLeft: 'auto'
   }
 });

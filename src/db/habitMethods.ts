@@ -9,7 +9,17 @@ import {
   type UpdateHabitInput,
   type HabitWithStreak
 } from './types';
-import { buildSetClause, computeStreaks, type SQLiteBindValue } from './utils';
+import {
+  buildSetClause,
+  computeStreaks,
+  enumerateDates,
+  toDateString,
+  todayDateString,
+  type SQLiteBindValue
+} from './utils';
+
+/** Trailing window (in days) used for the completion/failure rates that feed the Chai Score. */
+const RATE_WINDOW_DAYS = 30;
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
@@ -20,9 +30,9 @@ export async function createHabit(db: SQLiteDatabase, input: CreateHabitInput): 
   const result = await db.runAsync(
     `INSERT INTO habits
        (user_id, title, description, icon, color,
-        frequency_type, frequency_days, target_count,
+        frequency_type, frequency_days, target_count, priority,
         reminder_status, reminder_time, notification_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.user_id,
       input.title,
@@ -32,6 +42,7 @@ export async function createHabit(db: SQLiteDatabase, input: CreateHabitInput): 
       input.frequency_type,
       input.frequency_days,
       input.target_count,
+      input.priority ?? 'medium',
       input.reminder_status ?? 'disabled',
       input.reminder_time ?? null,
       input.notification_id ?? null
@@ -103,6 +114,19 @@ export async function getHabitsWithStreaks(
     habitIds
   );
 
+  // Query 3: raw status rows (with date) within the trailing rate window, in
+  // one round trip. Used to derive completion_rate_30d / failure_rate_30d
+  // below — these feed straight into the Chai Score (see utils/chaiScore.ts).
+  const windowStart = new Date();
+  windowStart.setDate(windowStart.getDate() - (RATE_WINDOW_DAYS - 1));
+  const windowStartStr = toDateString(windowStart);
+
+  const recentRows = await db.getAllAsync<{ habit_id: number; date: string; status: string }>(
+    `SELECT habit_id, date, status FROM habit_history
+     WHERE habit_id IN (${placeholders}) AND date >= ?`,
+    [...habitIds, windowStartStr]
+  );
+
   // Group dates by habit_id
   const datesByHabit = new Map<number, string[]>();
   for (const row of dateRows) {
@@ -117,16 +141,71 @@ export async function getHabitsWithStreaks(
     countByHabit.set(row.habit_id, row.total);
   }
 
-  // Compute streaks in JS (no DB calls in this loop)
+  // Group recent status-by-date per habit_id, so we can walk day by day.
+  const recentByHabit = new Map<number, Map<string, string>>();
+  for (const row of recentRows) {
+    let byDate = recentByHabit.get(row.habit_id);
+    if (!byDate) {
+      byDate = new Map<string, string>();
+      recentByHabit.set(row.habit_id, byDate);
+    }
+    byDate.set(row.date, row.status);
+  }
+
+  const today = todayDateString();
+  const yesterday = toDateString(new Date(Date.now() - 86400000));
+
+  // Compute streaks + windowed rates in JS (no DB calls in this loop)
   return habits.map((habit) => {
     const dates = datesByHabit.get(habit.id) ?? [];
     const { currentStreak, longestStreak } = computeStreaks(dates);
+
+    // A habit is only ever judged from the day it was created onward, and
+    // never against days before it existed — and never against a 30-day
+    // window it hasn't lived through yet.
+    const createdDateStr = habit.created_at.slice(0, 10);
+    const rangeStart = createdDateStr > windowStartStr ? createdDateStr : windowStartStr;
+
+    // Fully-elapsed days only (up to yesterday). Today isn't over yet, so
+    // it's handled separately below instead of being enumerated here.
+    const elapsedDays = enumerateDates(rangeStart, yesterday);
+    const historyForHabit = recentByHabit.get(habit.id) ?? new Map<string, string>();
+
+    let completedInWindow = 0;
+    let skippedInWindow = 0;
+    let missedInWindow = 0;
+    let windowDays = 0;
+
+    for (const day of elapsedDays) {
+      windowDays++;
+      const status = historyForHabit.get(day);
+      if (status === 'completed') completedInWindow++;
+      else if (status === 'skipped') skippedInWindow++;
+      else missedInWindow++; // day fully passed with nothing logged → missed
+    }
+
+    // Today only counts once it actually has a logged outcome. A habit
+    // created today — or any habit not yet acted on today — shouldn't be
+    // scored as "missed" before the day has even finished.
+    if (createdDateStr <= today) {
+      const todayStatus = historyForHabit.get(today);
+      if (todayStatus === 'completed') {
+        completedInWindow++;
+        windowDays++;
+      } else if (todayStatus === 'skipped') {
+        skippedInWindow++;
+        windowDays++;
+      }
+      // else: today is still pending — excluded from the denominator.
+    }
 
     return {
       ...habit,
       current_streak: currentStreak,
       longest_streak: longestStreak,
-      total_completions: countByHabit.get(habit.id) ?? 0
+      total_completions: countByHabit.get(habit.id) ?? 0,
+      completion_rate_30d: windowDays > 0 ? completedInWindow / windowDays : 0,
+      failure_rate_30d: windowDays > 0 ? (skippedInWindow + missedInWindow) / windowDays : 0
     };
   });
 }

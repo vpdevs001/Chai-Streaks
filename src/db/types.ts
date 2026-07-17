@@ -19,6 +19,7 @@ export type UpdateUserInput = Partial<Pick<User, 'name' | 'avatar_uri'>>;
 
 export type FrequencyType = 'daily' | 'weekly' | 'custom';
 export type ReminderStatus = 'enabled' | 'disabled';
+export type HabitPriority = 'low' | 'medium' | 'high';
 
 export interface Habit {
   id: number;
@@ -32,6 +33,8 @@ export interface Habit {
   frequency_days: string;
   /** Target completions per frequency period (default 1) */
   target_count: number;
+  /** How much this habit should weigh in the Chai Score. Defaults to 'medium'. */
+  priority: HabitPriority;
   reminder_status: ReminderStatus;
   /** HH:MM string, e.g. "08:30". Null when reminder disabled. */
   reminder_time: string | null;
@@ -49,7 +52,13 @@ export type CreateHabitInput = Pick<
   Partial<
     Pick<
       Habit,
-      'description' | 'icon' | 'color' | 'reminder_status' | 'reminder_time' | 'notification_id'
+      | 'description'
+      | 'icon'
+      | 'color'
+      | 'priority'
+      | 'reminder_status'
+      | 'reminder_time'
+      | 'notification_id'
     >
   > & { user_id: number };
 
@@ -63,6 +72,7 @@ export type UpdateHabitInput = Partial<
     | 'frequency_type'
     | 'frequency_days'
     | 'target_count'
+    | 'priority'
     | 'reminder_status'
     | 'reminder_time'
     | 'notification_id'
@@ -101,6 +111,18 @@ export interface HabitWithStreak extends Habit {
   current_streak: number;
   longest_streak: number;
   total_completions: number;
+  /**
+   * Completion / failure rate over a trailing window (min(30 days, days
+   * since the habit was created)) — never judged against days before the
+   * habit existed. "Failure" = explicitly skipped OR left unmarked on a day
+   * that has fully elapsed. Today is only counted once it has a logged
+   * outcome (completed/skipped) — an unmarked "today" is still pending, not
+   * a miss, so completion_rate_30d + failure_rate_30d === 1 except for a
+   * brand-new habit with no elapsed days and nothing logged yet today,
+   * where both are 0. Powers the Chai Score (utils/chaiScore.ts).
+   */
+  completion_rate_30d: number;
+  failure_rate_30d: number;
 }
 
 export interface WeeklySummary {

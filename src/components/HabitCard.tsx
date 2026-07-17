@@ -10,6 +10,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../constants';
 import type { HabitWithStreak } from '../db/types';
 import type { HabitStatus } from '../hooks/useHabits';
+import { priorityColor } from './HabitFormPriority';
 
 export default function HabitCard({
   habit,
@@ -43,12 +44,30 @@ export default function HabitCard({
     transform: [{ scale: crossScale.value }]
   }));
 
+  // NOTE: this project has `experiments.reactCompiler: true` enabled (app.json),
+  // and Expo SDK 57 ships React Compiler as stable/recommended. React Compiler
+  // hoists inline callbacks (like the 3rd arg below) out of their original
+  // call site into a module-level `_temp` function *before* the Worklets Babel
+  // plugin gets a chance to auto-workletize them by position. The result is a
+  // callback that runs on the UI thread but was never converted into a
+  // worklet — which throws `Tried to synchronously call a non-worklet
+  // function on the UI thread` and crashes the app the instant the spring
+  // animation finishes (see reanimated#6826). Adding an explicit 'worklet'
+  // directive makes the Worklets plugin workletize the function based on the
+  // directive itself, regardless of where the compiler moves it — so this
+  // stays safe even with React Compiler on.
   const animateBounce = (target: typeof checkScale) => {
-    target.value = withSpring(1.2, { damping: 8, stiffness: 350 }, () => {
-      target.value = withSpring(1, { damping: 10, stiffness: 280 });
+    target.value = withSpring(1.2, { damping: 8, stiffness: 350 }, (finished) => {
+      'worklet';
+      if (finished) {
+        target.value = withSpring(1, { damping: 10, stiffness: 280 });
+      }
     });
-    scale.value = withSpring(0.95, { damping: 14, stiffness: 300 }, () => {
-      scale.value = withSpring(1, { damping: 12, stiffness: 260 });
+    scale.value = withSpring(0.95, { damping: 14, stiffness: 300 }, (finished) => {
+      'worklet';
+      if (finished) {
+        scale.value = withSpring(1, { damping: 12, stiffness: 260 });
+      }
     });
   };
 
@@ -115,6 +134,13 @@ export default function HabitCard({
               {!isSkipped && habit.current_streak > 0 && (
                 <Text style={[styles.streakBadge, { color: '#EF4444' }]}>
                   🔥 {habit.current_streak}d
+                </Text>
+              )}
+              {habit.priority !== 'medium' && (
+                <Text
+                  style={[styles.priorityBadge, { color: priorityColor(habit.priority, colors) }]}
+                >
+                  {habit.priority === 'high' ? '⬆ High' : '⬇ Low'}
                 </Text>
               )}
               <Text style={[styles.freqTag, { color: colors.textMuted }]}>
@@ -228,6 +254,11 @@ const styles = StyleSheet.create({
   },
 
   streakBadge: {
+    fontSize: TYPOGRAPHY.xs,
+    fontWeight: TYPOGRAPHY.bold
+  },
+
+  priorityBadge: {
     fontSize: TYPOGRAPHY.xs,
     fontWeight: TYPOGRAPHY.bold
   },
