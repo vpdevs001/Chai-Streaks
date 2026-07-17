@@ -15,6 +15,7 @@ export default function HomeHeader({ colors, user }: Props) {
   const hasName = !!user?.name && user.name.trim().length > 0 && user.name.trim() !== 'You';
   const firstName = hasName ? user!.name.trim().split(' ')[0] : '';
   const initials = hasName ? user!.name.trim().slice(0, 1).toUpperCase() : null;
+  const chaiScrolls = user?.chai_scrolls ?? 0;
 
   return (
     <View style={styles.header}>
@@ -22,28 +23,48 @@ export default function HomeHeader({ colors, user }: Props) {
         <Text style={[styles.greeting, { color: colors.text }]}>{getGreeting(firstName)}</Text>
         <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDate(new Date())}</Text>
       </View>
-      <Pressable
-        style={({ pressed }) => [
-          styles.avatarBtn,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            opacity: pressed ? 0.8 : 1
-          }
-        ]}
-        onPress={() => router.push('/settings')}
-      >
-        {user?.avatar_uri ? (
-          // A real photo was set during onboarding/settings — show it.
-          <Image source={{ uri: user.avatar_uri }} style={styles.avatarImage} contentFit="cover" />
-        ) : initials ? (
-          // Named but no photo — show their initial instead of a generic icon.
-          <Text style={[styles.avatarInitials, { color: colors.primary }]}>{initials}</Text>
-        ) : (
-          // No user set up at all — genuinely a guest.
-          <Text style={{ fontSize: 22 }}>👤</Text>
+      <View style={styles.headerRight}>
+        {chaiScrolls > 0 && (
+          // Chai Scroll balance — earned every 7-day streak, spent to
+          // recover a missed day (see hooks/useHabits.ts recoverStreak).
+          <View
+            style={[
+              styles.scrollBadge,
+              { backgroundColor: colors.warning + '1A', borderColor: colors.warning + '55' }
+            ]}
+          >
+            <Text style={[styles.scrollBadgeText, { color: colors.warning }]}>
+              📜 {chaiScrolls}
+            </Text>
+          </View>
         )}
-      </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.avatarBtn,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              opacity: pressed ? 0.8 : 1
+            }
+          ]}
+          onPress={() => router.push('/settings')}
+        >
+          {user?.avatar_uri ? (
+            // A real photo was set during onboarding/settings — show it.
+            <Image
+              source={{ uri: user.avatar_uri }}
+              style={styles.avatarImage}
+              contentFit="cover"
+            />
+          ) : initials ? (
+            // Named but no photo — show their initial instead of a generic icon.
+            <Text style={[styles.avatarInitials, { color: colors.primary }]}>{initials}</Text>
+          ) : (
+            // No user set up at all — genuinely a guest.
+            <Text style={{ fontSize: 22 }}>👤</Text>
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -66,6 +87,24 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sm,
     fontWeight: TYPOGRAPHY.medium,
     marginTop: 2
+  },
+
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm
+  },
+
+  scrollBadge: {
+    borderRadius: RADII.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 6,
+    paddingHorizontal: SPACING.sm
+  },
+
+  scrollBadgeText: {
+    fontSize: TYPOGRAPHY.sm,
+    fontWeight: TYPOGRAPHY.bold
   },
 
   avatarBtn: {

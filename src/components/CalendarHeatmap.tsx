@@ -6,7 +6,7 @@ import { toDateString } from '../db/utils';
 
 interface Props {
   habitColor: string;
-  history: Record<string, 'completed' | 'skipped' | 'partial'>;
+  history: Record<string, 'completed' | 'skipped' | 'partial' | 'frozen'>;
 }
 
 const CELL = 12;
@@ -94,6 +94,7 @@ export default function CalendarHeatmap({ habitColor, history }: Props) {
     if (status === 'completed') return `${label} · ✅ Completed`;
     if (status === 'skipped') return `${label} · ✕ Skipped`;
     if (status === 'partial') return `${label} · ◑ Partial`;
+    if (status === 'frozen') return `${label} · 📜 Recovered with a Chai Scroll`;
     return label;
   };
 
@@ -106,6 +107,7 @@ export default function CalendarHeatmap({ habitColor, history }: Props) {
     if (status === 'completed') return habitColor;
     if (status === 'partial') return `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
     if (status === 'skipped') return colors.danger + 'BB';
+    if (status === 'frozen') return colors.warning + 'BB';
     // Empty — subtle grid cell
     return `rgba(${rgb.r},${rgb.g},${rgb.b},0.08)`;
   };
@@ -209,6 +211,9 @@ export default function CalendarHeatmap({ habitColor, history }: Props) {
         <View style={{ width: SPACING.sm }} />
         <View style={[styles.cell, { backgroundColor: colors.danger + 'BB' }]} />
         <Text style={[styles.legendText, { color: colors.textMuted }]}>Skipped</Text>
+        <View style={{ width: SPACING.sm }} />
+        <View style={[styles.cell, { backgroundColor: colors.warning + 'BB' }]} />
+        <Text style={[styles.legendText, { color: colors.textMuted }]}>📜 Recovered</Text>
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useHabits } from '../../hooks/useHabits';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
@@ -32,7 +33,11 @@ export default function HomeScreen() {
     toggleHabit,
     getHabitStatus,
     completedCount,
-    completionRate
+    completionRate,
+    chaiScrolls,
+    scrollsAwarded,
+    clearScrollsAwarded,
+    recoverStreak
   } = useHabits();
 
   useFocusEffect(
@@ -40,6 +45,15 @@ export default function HomeScreen() {
       refresh();
     }, [refresh])
   );
+
+  // Celebrate a freshly-minted Chai Scroll with a success haptic — the new
+  // balance is already visible via the badge in HomeHeader.
+  useEffect(() => {
+    if (scrollsAwarded > 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      clearScrollsAwarded();
+    }
+  }, [scrollsAwarded, clearScrollsAwarded]);
 
   const maxStreak = habits.reduce((m, h) => Math.max(m, h.current_streak), 0);
   const bestStreak = habits.reduce((m, h) => Math.max(m, h.longest_streak), 0);
@@ -142,6 +156,8 @@ export default function HomeScreen() {
             onComplete={() => toggleHabit(habit.id, 'completed')}
             onSkip={() => toggleHabit(habit.id, 'skipped')}
             onPress={() => router.push(`/habit/${habit.id}`)}
+            canRecover={!!habit.recoverableDate && chaiScrolls > 0}
+            onRecover={() => recoverStreak(habit.id)}
           />
         )}
         ItemSeparatorComponent={() => <View style={{ height: SPACING.sm }} />}

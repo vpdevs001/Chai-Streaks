@@ -8,6 +8,8 @@ export interface User {
   id: number;
   name: string;
   avatar_uri: string | null; // local file URI for profile picture
+  /** Chai Scroll balance — spend one to recover a missed day on any habit. */
+  chai_scrolls: number;
   created_at: string; // ISO-8601
   updated_at: string;
 }
@@ -41,6 +43,13 @@ export interface Habit {
   /** expo-notifications identifier, stored so we can cancel it later */
   notification_id: string | null;
   is_archived: number; // SQLite has no BOOLEAN; 0 = false, 1 = true
+  /**
+   * Highest current_streak length this habit has already paid out a Chai
+   * Scroll for (see db/scrollMethods.ts). Prevents re-awarding a scroll
+   * every time streaks are recomputed instead of only once per new
+   * 7-day milestone.
+   */
+  last_scroll_award_streak: number;
   created_at: string;
   updated_at: string;
 }
@@ -82,7 +91,8 @@ export type UpdateHabitInput = Partial<
 
 // ── History ──────────────────────────────────
 
-export type CompletionStatus = 'completed' | 'skipped' | 'partial';
+/** 'frozen' = the day was recovered with a Chai Scroll (see db/scrollMethods.ts) — not a genuine completion, but it plugs the gap so a streak survives it. */
+export type CompletionStatus = 'completed' | 'skipped' | 'partial' | 'frozen';
 
 export interface HabitHistory {
   id: number;
@@ -123,6 +133,13 @@ export interface HabitWithStreak extends Habit {
    */
   completion_rate_30d: number;
   failure_rate_30d: number;
+  /**
+   * Yesterday's date if it's an unlogged gap for this habit (and the habit
+   * already existed then) — i.e. spending a Chai Scroll on this date would
+   * plug the gap and let the streak survive it. Null when there's nothing
+   * to recover (yesterday is already logged, or the habit didn't exist yet).
+   */
+  recoverableDate: string | null;
 }
 
 export interface WeeklySummary {

@@ -47,10 +47,16 @@ export function useStats() {
             const hist = await getAllHabitsHistoryForDate(db, uid, date);
             const count = hist.filter((h) => h.status === 'completed').length;
             const skipped = hist.filter((h) => h.status === 'skipped').length;
+            // A day recovered with a Chai Scroll ('frozen') isn't a genuine
+            // completion, but it shouldn't drag the percentage down as a
+            // miss either — exclude it from the denominator entirely, same
+            // as it's treated in the per-habit rate calc (habitMethods.ts).
+            const frozen = hist.filter((h) => h.status === 'frozen').length;
             // Only count habits that existed on this day — a habit added
             // later shouldn't inflate the denominator for earlier days
             // (and drag down their completion %) before it existed.
-            const total = habits.filter((h) => h.created_at.slice(0, 10) <= date).length;
+            const activeOnDate = habits.filter((h) => h.created_at.slice(0, 10) <= date).length;
+            const total = Math.max(0, activeOnDate - frozen);
             return { date, count, skipped, total };
           })
         );

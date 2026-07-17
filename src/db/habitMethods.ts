@@ -98,10 +98,13 @@ export async function getHabitsWithStreaks(
   const habitIds = habits.map((h) => h.id);
   const placeholders = habitIds.map(() => '?').join(', ');
 
-  // Query 1: every completed date for every active habit, in one round trip.
+  // Query 1: every completed OR frozen date for every active habit, in one
+  // round trip. 'frozen' days (recovered with a Chai Scroll — see
+  // db/scrollMethods.ts) count toward streak continuity even though they're
+  // not real completions, so a single covered gap doesn't reset the streak.
   const dateRows = await db.getAllAsync<{ habit_id: number; date: string }>(
     `SELECT habit_id, date FROM habit_history
-     WHERE habit_id IN (${placeholders}) AND status = 'completed'
+     WHERE habit_id IN (${placeholders}) AND status IN ('completed', 'frozen')
      ORDER BY habit_id ASC, date ASC`,
     habitIds
   );
@@ -177,11 +180,21 @@ export async function getHabitsWithStreaks(
     let windowDays = 0;
 
     for (const day of elapsedDays) {
-      windowDays++;
       const status = historyForHabit.get(day);
-      if (status === 'completed') completedInWindow++;
-      else if (status === 'skipped') skippedInWindow++;
-      else missedInWindow++; // day fully passed with nothing logged → missed
+      if (status === 'completed') {
+        completedInWindow++;
+        windowDays++;
+      } else if (status === 'skipped') {
+        skippedInWindow++;
+        windowDays++;
+      } else if (status === 'frozen') {
+        // Recovered with a Chai Scroll — it exists purely to keep the
+        // *streak* alive, so it's neutral here: not a miss, but not a real
+        // completion either. Excluded from the rate denominator entirely.
+      } else {
+        missedInWindow++; // day fully passed with nothing logged → missed
+        windowDays++;
+      }
     }
 
     // Today only counts once it actually has a logged outcome. A habit
@@ -199,13 +212,20 @@ export async function getHabitsWithStreaks(
       // else: today is still pending — excluded from the denominator.
     }
 
+    // A Chai Scroll can only patch a real gap: yesterday must have no
+    // history entry at all, and the habit must have already existed then
+    // (no recovering a day before it was created).
+    const recoverableDate =
+      createdDateStr <= yesterday && !historyForHabit.has(yesterday) ? yesterday : null;
+
     return {
       ...habit,
       current_streak: currentStreak,
       longest_streak: longestStreak,
       total_completions: countByHabit.get(habit.id) ?? 0,
       completion_rate_30d: windowDays > 0 ? completedInWindow / windowDays : 0,
-      failure_rate_30d: windowDays > 0 ? (skippedInWindow + missedInWindow) / windowDays : 0
+      failure_rate_30d: windowDays > 0 ? (skippedInWindow + missedInWindow) / windowDays : 0,
+      recoverableDate
     };
   });
 }

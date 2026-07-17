@@ -7,7 +7,9 @@ import {
   deleteHistoryForDate,
   getHistoryForDate,
   ensureActiveUser,
-  getUserById
+  getUserById,
+  maybeAwardChaiScroll,
+  recoverHabitStreak
 } from '../db';
 import { isReleasedDbError } from '../db/utils';
 import type { HabitWithStreak, HabitHistory, User } from '../db/types';
@@ -22,6 +24,9 @@ export function useHabits() {
   const [userId, setUserId] = useState<number | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Set right after toggleHabit mints new Chai Scroll(s), so the UI can
+  // show a one-off celebration. Callers should clear it once shown.
+  const [scrollsAwarded, setScrollsAwarded] = useState(0);
 
   // Guards against setState after unmount, and lets us tell whether a
   // "database already released" error (see db/utils.ts) happened after
@@ -114,11 +119,59 @@ export function useHabits() {
         const updated = await getHabitsWithStreaks(db, userId);
         if (!isMounted.current) return;
         setHabits(updated);
+
+        // A completion (not a skip, and not an unmark) may have just pushed
+        // this habit's streak past a new 7-day milestone — mint the scroll(s)
+        // and refresh the user so the new balance shows up immediately.
+        const wasCompletion = !(existing && existing.status === targetStatus);
+        if (wasCompletion && targetStatus === 'completed') {
+          const habitNow = updated.find((h) => h.id === habitId);
+          if (habitNow) {
+            const awarded = await maybeAwardChaiScroll(
+              db,
+              habitId,
+              userId,
+              habitNow.current_streak
+            );
+            if (awarded > 0) {
+              if (!isMounted.current) return;
+              setScrollsAwarded((prev) => prev + awarded);
+              const freshUser = await getUserById(db, userId);
+              if (!isMounted.current) return;
+              setUser(freshUser);
+            }
+          }
+        }
       } catch (err) {
         if (!isReleasedDbError(err)) throw err;
       }
     },
     [db, userId, todayHistory]
+  );
+
+  /**
+   * Spend one Chai Scroll to recover a habit's `recoverableDate` (see
+   * getHabitsWithStreaks) — freezes that gap so the streak survives it.
+   */
+  const recoverStreak = useCallback(
+    async (habitId: number) => {
+      if (!userId) return;
+      const habit = habits.find((h) => h.id === habitId);
+      if (!habit?.recoverableDate) return;
+      try {
+        await recoverHabitStreak(db, habitId, userId, habit.recoverableDate);
+        const [updated, freshUser] = await Promise.all([
+          getHabitsWithStreaks(db, userId),
+          getUserById(db, userId)
+        ]);
+        if (!isMounted.current) return;
+        setHabits(updated);
+        setUser(freshUser);
+      } catch (err) {
+        if (!isReleasedDbError(err)) throw err;
+      }
+    },
+    [db, userId, habits]
   );
 
   const getHabitStatus = useCallback(
@@ -154,6 +207,10 @@ export function useHabits() {
     getHabitStatus,
     isCompleted,
     completedCount,
-    completionRate
+    completionRate,
+    chaiScrolls: user?.chai_scrolls ?? 0,
+    scrollsAwarded,
+    clearScrollsAwarded: () => setScrollsAwarded(0),
+    recoverStreak
   };
 }

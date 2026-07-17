@@ -63,7 +63,9 @@ export default function EditHabitScreen() {
   const [targetCount, setTargetCount] = useState(1);
   const [priority, setPriority] = useState<HabitPriority>('medium');
   const [reminderTime, setReminderTime] = useState('');
-  const [history, setHistory] = useState<Record<string, 'completed' | 'skipped' | 'partial'>>({});
+  const [history, setHistory] = useState<
+    Record<string, 'completed' | 'skipped' | 'partial' | 'frozen'>
+  >({});
 
   useEffect(() => {
     // This screen is a modal that can be dismissed (router.back()) before

@@ -122,10 +122,25 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
       // score jumps around the moment this migration runs.
       await db.execAsync(`ALTER TABLE habits ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium';`);
     }
+  },
+  {
+    name: 'v3_add_chai_scrolls',
+    run: async (db) => {
+      // Chai Scrolls are a streak-recovery currency (see db/scrollMethods.ts):
+      // earn one every time a habit's streak crosses a new multiple of 7,
+      // spend one to "freeze" a missed day so a streak survives the gap.
+      // Scrolls are a shared balance on the user (spendable against any of
+      // their habits); each habit needs its own counter so we know the
+      // highest streak length already paid out, and never double-award.
+      await db.execAsync(`ALTER TABLE users ADD COLUMN chai_scrolls INTEGER NOT NULL DEFAULT 0;`);
+      await db.execAsync(
+        `ALTER TABLE habits ADD COLUMN last_scroll_award_streak INTEGER NOT NULL DEFAULT 0;`
+      );
+    }
   }
   // Future migrations go here, e.g.:
   // {
-  //   name: 'v3_add_habit_tags',
+  //   name: 'v4_add_habit_tags',
   //   run: async (db) => {
   //     await db.execAsync(`ALTER TABLE habits ADD COLUMN tags TEXT DEFAULT '[]';`);
   //   },

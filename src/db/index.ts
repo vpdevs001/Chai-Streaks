@@ -41,6 +41,9 @@ export {
   upsertHabitHistory
 } from './historyMethods';
 
+// Chai Scrolls (streak-recovery currency)
+export { maybeAwardChaiScroll, recoverHabitStreak } from './scrollMethods';
+
 // Preferences (AsyncStorage)
 export {
   clearActiveUserId,

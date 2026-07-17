@@ -18,7 +18,9 @@ export default function HabitCard({
   index = 0,
   onComplete,
   onSkip,
-  onPress
+  onPress,
+  canRecover = false,
+  onRecover
 }: {
   habit: HabitWithStreak;
   status?: HabitStatus;
@@ -26,6 +28,9 @@ export default function HabitCard({
   onComplete: () => void;
   onSkip: () => void;
   onPress: () => void;
+  /** True when this habit has a recoverable gap AND the user has a Chai Scroll to spend on it. */
+  canRecover?: boolean;
+  onRecover?: () => void;
 }) {
   const { colors } = useTheme();
   const scale = useSharedValue(1);
@@ -83,6 +88,11 @@ export default function HabitCard({
     onSkip();
   };
 
+  const handleRecover = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onRecover?.();
+  };
+
   const accentColor = habit.color ?? colors.primary;
   const isCompleted = status === 'completed';
   const isSkipped = status === 'skipped';
@@ -102,7 +112,7 @@ export default function HabitCard({
         <Pressable
           onPress={onPress}
           style={[
-            styles.habitCard,
+            styles.habitCardOuter,
             {
               backgroundColor: cardBg,
               borderColor: cardBorderColor,
@@ -111,79 +121,55 @@ export default function HabitCard({
             }
           ]}
         >
-          {/* icon + name */}
-          <View style={[styles.habitIconWrap, { backgroundColor: accentColor + '22' }]}>
-            <Text style={styles.habitIcon}>{habit.icon ?? '✨'}</Text>
-          </View>
-          <View style={styles.habitMeta}>
-            <Text
-              style={[
-                styles.habitTitle,
-                { color: colors.text },
-                isCompleted && styles.habitTitleDone,
-                isSkipped && { color: colors.textSecondary }
-              ]}
-              numberOfLines={1}
-            >
-              {habit.title}
-            </Text>
-            <View style={styles.habitSubRow}>
-              {isSkipped && (
-                <Text style={[styles.statusBadge, { color: colors.danger }]}>✕ Skipped</Text>
-              )}
-              {!isSkipped && habit.current_streak > 0 && (
-                <Text style={[styles.streakBadge, { color: '#EF4444' }]}>
-                  🔥 {habit.current_streak}d
-                </Text>
-              )}
-              {habit.priority !== 'medium' && (
-                <Text
-                  style={[styles.priorityBadge, { color: priorityColor(habit.priority, colors) }]}
-                >
-                  {habit.priority === 'high' ? '⬆ High' : '⬇ Low'}
-                </Text>
-              )}
-              <Text style={[styles.freqTag, { color: colors.textMuted }]}>
-                {habit.frequency_type}
-              </Text>
+          <View style={styles.habitCardRow}>
+            {/* icon + name */}
+            <View style={[styles.habitIconWrap, { backgroundColor: accentColor + '22' }]}>
+              <Text style={styles.habitIcon}>{habit.icon ?? '✨'}</Text>
             </View>
-          </View>
-
-          {/* Action buttons */}
-          <View style={styles.actions}>
-            {/* Check / Complete button */}
-            <Pressable
-              onPress={handleComplete}
-              style={({ pressed }) => [
-                styles.actionBtn,
-                {
-                  backgroundColor: isCompleted ? accentColor : colors.inputBg,
-                  borderColor: isCompleted ? accentColor : colors.border,
-                  opacity: pressed ? 0.75 : 1
-                }
-              ]}
-              hitSlop={6}
-            >
-              <Animated.Text
+            <View style={styles.habitMeta}>
+              <Text
                 style={[
-                  styles.actionIcon,
-                  { color: isCompleted ? '#fff' : colors.textMuted },
-                  checkAnimStyle
+                  styles.habitTitle,
+                  { color: colors.text },
+                  isCompleted && styles.habitTitleDone,
+                  isSkipped && { color: colors.textSecondary }
                 ]}
+                numberOfLines={1}
               >
-                ✓
-              </Animated.Text>
-            </Pressable>
+                {habit.title}
+              </Text>
+              <View style={styles.habitSubRow}>
+                {isSkipped && (
+                  <Text style={[styles.statusBadge, { color: colors.danger }]}>✕ Skipped</Text>
+                )}
+                {!isSkipped && habit.current_streak > 0 && (
+                  <Text style={[styles.streakBadge, { color: '#EF4444' }]}>
+                    🔥 {habit.current_streak}d
+                  </Text>
+                )}
+                {habit.priority !== 'medium' && (
+                  <Text
+                    style={[styles.priorityBadge, { color: priorityColor(habit.priority, colors) }]}
+                  >
+                    {habit.priority === 'high' ? '⬆ High' : '⬇ Low'}
+                  </Text>
+                )}
+                <Text style={[styles.freqTag, { color: colors.textMuted }]}>
+                  {habit.frequency_type}
+                </Text>
+              </View>
+            </View>
 
-            {/* Cross / Skip button — hidden when completed */}
-            {!isCompleted && (
+            {/* Action buttons */}
+            <View style={styles.actions}>
+              {/* Check / Complete button */}
               <Pressable
-                onPress={handleSkip}
+                onPress={handleComplete}
                 style={({ pressed }) => [
                   styles.actionBtn,
                   {
-                    backgroundColor: isSkipped ? colors.danger : colors.inputBg,
-                    borderColor: isSkipped ? colors.danger : colors.border,
+                    backgroundColor: isCompleted ? accentColor : colors.inputBg,
+                    borderColor: isCompleted ? accentColor : colors.border,
                     opacity: pressed ? 0.75 : 1
                   }
                 ]}
@@ -192,15 +178,61 @@ export default function HabitCard({
                 <Animated.Text
                   style={[
                     styles.actionIcon,
-                    { color: isSkipped ? '#fff' : colors.textMuted },
-                    crossAnimStyle
+                    { color: isCompleted ? '#fff' : colors.textMuted },
+                    checkAnimStyle
                   ]}
                 >
-                  ✕
+                  ✓
                 </Animated.Text>
               </Pressable>
-            )}
+
+              {/* Cross / Skip button — hidden when completed */}
+              {!isCompleted && (
+                <Pressable
+                  onPress={handleSkip}
+                  style={({ pressed }) => [
+                    styles.actionBtn,
+                    {
+                      backgroundColor: isSkipped ? colors.danger : colors.inputBg,
+                      borderColor: isSkipped ? colors.danger : colors.border,
+                      opacity: pressed ? 0.75 : 1
+                    }
+                  ]}
+                  hitSlop={6}
+                >
+                  <Animated.Text
+                    style={[
+                      styles.actionIcon,
+                      { color: isSkipped ? '#fff' : colors.textMuted },
+                      crossAnimStyle
+                    ]}
+                  >
+                    ✕
+                  </Animated.Text>
+                </Pressable>
+              )}
+            </View>
           </View>
+
+          {/* Chai Scroll recovery — only shown when yesterday was missed and a scroll is available */}
+          {canRecover && (
+            <Pressable
+              onPress={handleRecover}
+              style={({ pressed }) => [
+                styles.recoverBanner,
+                {
+                  backgroundColor: colors.warning + '1A',
+                  borderColor: colors.warning + '55',
+                  opacity: pressed ? 0.7 : 1
+                }
+              ]}
+              hitSlop={4}
+            >
+              <Text style={[styles.recoverText, { color: colors.warning }]}>
+                📜 Missed yesterday — tap to recover your streak with a Chai Scroll
+              </Text>
+            </Pressable>
+          )}
         </Pressable>
       </Animated.View>
     </Animated.View>
@@ -208,11 +240,15 @@ export default function HabitCard({
 }
 
 const styles = StyleSheet.create({
-  habitCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  habitCardOuter: {
     borderRadius: RADII.lg,
     padding: SPACING.md,
+    gap: SPACING.sm
+  },
+
+  habitCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.md
   },
 
@@ -286,5 +322,18 @@ const styles = StyleSheet.create({
   actionIcon: {
     fontSize: 14,
     fontWeight: TYPOGRAPHY.bold
+  },
+
+  recoverBanner: {
+    borderRadius: RADII.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm
+  },
+
+  recoverText: {
+    fontSize: TYPOGRAPHY.xs,
+    fontWeight: TYPOGRAPHY.semibold,
+    textAlign: 'center'
   }
 });
