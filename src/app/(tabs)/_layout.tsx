@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
-import TabIcon from '../../components/TabIcon';
+import TabIcon from '../../components/navigation/TabIcon';
 
 export default function TabsLayout() {
   const { colors } = useTheme();

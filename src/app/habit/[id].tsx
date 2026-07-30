@@ -31,15 +31,15 @@ import {
   scheduleHabitReminders,
   encodeIds
 } from '../../lib/notifications/schedule';
-import ConfirmDialog from '../../components/ConfirmDialog';
-import Section from '../../components/Section';
-import Label from '../../components/Label';
-import CalendarHeatmap from '../../components/CalendarHeatmap';
-import HabitFormAppearance from '../../components/HabitFormAppearance';
-import HabitFormFrequency from '../../components/HabitFormFrequency';
-import HabitFormPriority from '../../components/HabitFormPriority';
-import HabitDangerZone from '../../components/HabitDangerZone';
-import ReminderPicker from '../../components/ReminderPicker';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import Section from '../../components/habit/Section';
+import Label from '../../components/habit/Label';
+import CalendarHeatmap from '../../components/habit/CalendarHeatmap';
+import HabitFormAppearance from '../../components/habit/HabitFormAppearance';
+import HabitFormFrequency from '../../components/habit/HabitFormFrequency';
+import HabitFormPriority from '../../components/habit/HabitFormPriority';
+import HabitDangerZone from '../../components/habit/HabitDangerZone';
+import ReminderPicker from '../../components/habit/ReminderPicker';
 
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

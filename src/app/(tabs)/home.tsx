@@ -17,11 +17,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useHabits } from '../../hooks/useHabits';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { computeChaiScore, habitsToChaiScoreInputs } from '../../utils/chaiScore';
-import HomeHeader from '../../components/HomeHeader';
-import TodayProgressCard from '../../components/TodayProgressCard';
-import StatCard from '../../components/StatCard';
-import HabitCard from '../../components/HabitCard';
-import EmptyHabits from '../../components/EmptyHabits';
+import HomeHeader from '../../components/home/HomeHeader';
+import TodayProgressCard from '../../components/home/TodayProgressCard';
+import StatCard from '../../components/home/StatCard';
+import HabitCard from '../../components/home/HabitCard';
+import EmptyHabits from '../../components/home/EmptyHabits';
 
 export default function HomeScreen() {
   const { colors } = useTheme();

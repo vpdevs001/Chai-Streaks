@@ -19,12 +19,12 @@ import { HABIT_COLORS } from '../../theme';
 import { createHabit, ensureActiveUser, setHabitNotificationId } from '../../db';
 import type { FrequencyType, HabitPriority } from '../../db/types';
 import { scheduleHabitReminders, encodeIds } from '../../lib/notifications/schedule';
-import Section from '../../components/Section';
-import Label from '../../components/Label';
-import HabitFormAppearance from '../../components/HabitFormAppearance';
-import HabitFormFrequency from '../../components/HabitFormFrequency';
-import HabitFormPriority from '../../components/HabitFormPriority';
-import ReminderPicker from '../../components/ReminderPicker';
+import Section from '../../components/habit/Section';
+import Label from '../../components/habit/Label';
+import HabitFormAppearance from '../../components/habit/HabitFormAppearance';
+import HabitFormFrequency from '../../components/habit/HabitFormFrequency';
+import HabitFormPriority from '../../components/habit/HabitFormPriority';
+import ReminderPicker from '../../components/habit/ReminderPicker';
 
 export default function CreateHabitScreen() {
   const { colors } = useTheme();

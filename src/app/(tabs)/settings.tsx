@@ -33,11 +33,11 @@ import {
   setPreference
 } from '../../db';
 import type { User } from '../../db/types';
-import ConfirmDialog from '../../components/ConfirmDialog';
-import SettingsSectionHeader from '../../components/SettingsSectionHeader';
-import SettingsRow from '../../components/SettingsRow';
-import ThemePicker from '../../components/ThemePicker';
-import ProfileCard from '../../components/ProfileCard';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import SettingsSectionHeader from '../../components/settings/SettingsSectionHeader';
+import SettingsRow from '../../components/settings/SettingsRow';
+import ThemePicker from '../../components/settings/ThemePicker';
+import ProfileCard from '../../components/settings/ProfileCard';
 import { useNotifications } from '../../hooks/useNotifications';
 import { reconcileHabitReminders } from '../../lib/notifications/schedule';
 

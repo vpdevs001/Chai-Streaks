@@ -12,8 +12,8 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import OnboardingSlide from '../components/OnboardingSlide';
-import OnboardingProfileStep from '../components/OnboardingProfileStep';
+import OnboardingSlide from '../components/onboarding/OnboardingSlide';
+import OnboardingProfileStep from '../components/onboarding/OnboardingProfileStep';
 import { RADII, SLIDES, SPACING, TYPOGRAPHY } from '../constants';
 import { useTheme } from '../contexts/ThemeContext';
 import { setOnboarded, createUser, setActiveUserId } from '../db';

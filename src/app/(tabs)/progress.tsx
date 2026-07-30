@@ -15,12 +15,12 @@ import { useStats } from '../../hooks/useStats';
 import { useHabits } from '../../hooks/useHabits';
 import { SPACING, TYPOGRAPHY } from '../../constants';
 import { computeChaiScore, habitsToChaiScoreInputs } from '../../utils/chaiScore';
-import ChaiScoreBanner from '../../components/ChaiScoreBanner';
-import PeriodTabSwitcher from '../../components/PeriodTabSwitcher';
-import BarChart from '../../components/BarChart';
-import BigStatCard from '../../components/BigStatCard';
-import CompletionSummary from '../../components/CompletionSummary';
-import ScreenHeader from '../../components/ScreenHeader';
+import ChaiScoreBanner from '../../components/progress/ChaiScoreBanner';
+import PeriodTabSwitcher from '../../components/progress/PeriodTabSwitcher';
+import BarChart from '../../components/progress/BarChart';
+import BigStatCard from '../../components/progress/BigStatCard';
+import CompletionSummary from '../../components/progress/CompletionSummary';
+import ScreenHeader from '../../components/progress/ScreenHeader';
 
 export default function ProgressScreen() {
   const { colors } = useTheme();
