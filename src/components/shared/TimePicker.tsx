@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Pressable, Switch, StyleSheet, Platform } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { parseReminderTime, formatReminderTime } from '../../db/utils';
@@ -42,13 +42,23 @@ export function TimePicker({
     return d;
   };
 
-  const handleTimeChange = (event: DateTimePickerEvent, selected?: Date) => {
+  const handleTimeChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowPicker(false);
-      if (event.type !== 'set' || !selected) return;
+      if (event?.type === 'dismissed') return;
     }
-    if (selected) {
-      const timeStr = formatReminderTime(selected.getHours(), selected.getMinutes());
+
+    const date =
+      selectedDate instanceof Date
+        ? selectedDate
+        : event instanceof Date
+          ? event
+          : event?.nativeEvent?.timestamp
+            ? new Date(event.nativeEvent.timestamp)
+            : undefined;
+
+    if (date) {
+      const timeStr = formatReminderTime(date.getHours(), date.getMinutes());
       onChange(timeStr);
     }
   };
@@ -82,6 +92,7 @@ export function TimePicker({
             is24Hour={false}
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+            onChange={handleTimeChange}
             onValueChange={handleTimeChange}
             onDismiss={() => setShowPicker(false)}
           />
@@ -170,14 +181,23 @@ export function ReminderPicker({ value, onChange }: ReminderPickerProps) {
     updateTimes(next);
   };
 
-  const handleTimePickerChange = (event: DateTimePickerEvent, selected?: Date) => {
+  const handleTimePickerChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setPickerMode(null);
-      if (event.type !== 'set' || !selected) return;
+      if (event?.type === 'dismissed') return;
     }
 
-    if (selected) {
-      const timeStr = formatReminderTime(selected.getHours(), selected.getMinutes());
+    const date =
+      selectedDate instanceof Date
+        ? selectedDate
+        : event instanceof Date
+          ? event
+          : event?.nativeEvent?.timestamp
+            ? new Date(event.nativeEvent.timestamp)
+            : undefined;
+
+    if (date) {
+      const timeStr = formatReminderTime(date.getHours(), date.getMinutes());
       if (pickerMode === 'add') {
         updateTimes([...times, timeStr].sort());
       } else if (pickerMode === 'start') {
@@ -384,6 +404,7 @@ export function ReminderPicker({ value, onChange }: ReminderPickerProps) {
             is24Hour={false}
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+            onChange={handleTimePickerChange}
             onValueChange={handleTimePickerChange}
             onDismiss={() => setPickerMode(null)}
           />
