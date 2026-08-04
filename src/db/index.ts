@@ -42,7 +42,11 @@ export {
 } from './historyMethods';
 
 // Chai Scrolls (streak-recovery currency)
-export { maybeAwardChaiScroll, recoverHabitStreak } from './scrollMethods';
+export {
+  checkAndAwardUserChaiScroll,
+  maybeAwardChaiScroll,
+  recoverHabitStreak
+} from './scrollMethods';
 
 // Preferences (AsyncStorage)
 export {

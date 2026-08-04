@@ -24,20 +24,20 @@ export default function HomeHeader({ colors, user }: Props) {
         <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDate(new Date())}</Text>
       </View>
       <View style={styles.headerRight}>
-        {chaiScrolls > 0 && (
-          // Chai Scroll balance — earned every 7-day streak, spent to
-          // recover a missed day (see hooks/useHabits.ts recoverStreak).
-          <View
-            style={[
-              styles.scrollBadge,
-              { backgroundColor: colors.warning + '1A', borderColor: colors.warning + '55' }
-            ]}
-          >
-            <Text style={[styles.scrollBadgeText, { color: colors.warning }]}>
-              📜 {chaiScrolls}
-            </Text>
-          </View>
-        )}
+        <View
+          style={[
+            styles.scrollBadge,
+            {
+              backgroundColor: colors.warning + '1A',
+              borderColor: colors.warning + '55',
+              opacity: chaiScrolls === 0 ? 0.7 : 1
+            }
+          ]}
+        >
+          <Text style={[styles.scrollBadgeText, { color: colors.warning }]}>
+            📜 {chaiScrolls}
+          </Text>
+        </View>
         <Pressable
           style={({ pressed }) => [
             styles.avatarBtn,

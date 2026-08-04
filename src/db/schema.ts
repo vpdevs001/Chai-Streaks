@@ -137,14 +137,15 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
         `ALTER TABLE habits ADD COLUMN last_scroll_award_streak INTEGER NOT NULL DEFAULT 0;`
       );
     }
+  },
+  {
+    name: 'v4_add_last_scroll_award_date',
+    run: async (db) => {
+      await db.execAsync(
+        `ALTER TABLE users ADD COLUMN last_scroll_award_date TEXT;`
+      );
+    }
   }
-  // Future migrations go here, e.g.:
-  // {
-  //   name: 'v4_add_habit_tags',
-  //   run: async (db) => {
-  //     await db.execAsync(`ALTER TABLE habits ADD COLUMN tags TEXT DEFAULT '[]';`);
-  //   },
-  // },
 ];
 
 // ─── Migration runner (used as `onInit` in <SQLiteProvider>) ─────────────────

@@ -8,7 +8,7 @@ import {
   getHistoryForDate,
   ensureActiveUser,
   getUserById,
-  maybeAwardChaiScroll,
+  checkAndAwardUserChaiScroll,
   recoverHabitStreak
 } from '../db';
 import { isReleasedDbError } from '../db/utils';
@@ -120,27 +120,14 @@ export function useHabits() {
         if (!isMounted.current) return;
         setHabits(updated);
 
-        // A completion (not a skip, and not an unmark) may have just pushed
-        // this habit's streak past a new 7-day milestone — mint the scroll(s)
-        // and refresh the user so the new balance shows up immediately.
-        const wasCompletion = !(existing && existing.status === targetStatus);
-        if (wasCompletion && targetStatus === 'completed') {
-          const habitNow = updated.find((h) => h.id === habitId);
-          if (habitNow) {
-            const awarded = await maybeAwardChaiScroll(
-              db,
-              habitId,
-              userId,
-              habitNow.current_streak
-            );
-            if (awarded > 0) {
-              if (!isMounted.current) return;
-              setScrollsAwarded((prev) => prev + awarded);
-              const freshUser = await getUserById(db, userId);
-              if (!isMounted.current) return;
-              setUser(freshUser);
-            }
-          }
+        // Check if user's overall 7-day completion rate (>= 50%) earns a Chai Scroll
+        const awarded = await checkAndAwardUserChaiScroll(db, userId);
+        if (awarded > 0) {
+          if (!isMounted.current) return;
+          setScrollsAwarded((prev) => prev + awarded);
+          const freshUser = await getUserById(db, userId);
+          if (!isMounted.current) return;
+          setUser(freshUser);
         }
       } catch (err) {
         if (!isReleasedDbError(err)) throw err;
