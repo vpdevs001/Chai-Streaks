@@ -1,84 +1,89 @@
-import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing
-} from 'react-native-reanimated';
+import { CircularProgressBase } from 'react-native-circular-progress-indicator';
 import { useTheme } from '../../contexts/ThemeContext';
 import { TYPOGRAPHY } from '../../constants';
 
-export default function ProgressRing({
-  rate,
-  size = 120,
-  stroke = 10,
-  color
-}: {
+interface ProgressRingProps {
+  /** Completion rate as a fraction between 0 and 1 */
   rate: number;
   size?: number;
   stroke?: number;
   color: string;
-}) {
+  /** Text shown below the ring */
+  label?: string;
+  /** Animation duration in ms */
+  duration?: number;
+}
+
+export default function ProgressRing({
+  rate,
+  size = 120,
+  stroke = 14,
+  color,
+  label = 'Today',
+  duration = 700
+}: ProgressRingProps) {
   const { colors } = useTheme();
-  const pct = Math.round(rate * 100);
-  const progress = useSharedValue(rate);
-
-  useEffect(() => {
-    progress.value = withTiming(rate, { duration: 500, easing: Easing.out(Easing.cubic) });
-  }, [rate, progress]);
-
-  const arcStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${-90 + progress.value * 360}deg` }]
-  }));
+  const pct = Math.round(Math.min(Math.max(rate, 0), 1) * 100);
+  const radius = size / 2 - stroke / 2;
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Track */}
-      <View
-        style={{
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: stroke,
-          borderColor: colors.border
-        }}
-      />
-      {/* Progress arc — use rotation trick */}
-      {pct > 0 && (
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: stroke,
-              borderColor: color,
-              borderTopColor: pct > 75 ? color : 'transparent',
-              borderRightColor: pct > 25 ? color : 'transparent',
-              borderBottomColor: pct > 50 ? color : 'transparent',
-              borderLeftColor: color
-            },
-            arcStyle
-          ]}
+    <View style={{ alignItems: 'center', gap: 6 }}>
+      {/* Ring + centered text overlay */}
+      <View style={{ width: radius * 2, height: radius * 2 }}>
+        <CircularProgressBase
+          value={pct}
+          initialValue={0}
+          radius={radius}
+          maxValue={100}
+          duration={duration}
+          activeStrokeWidth={stroke}
+          inActiveStrokeWidth={stroke}
+          activeStrokeColor={color}
+          inActiveStrokeColor={colors.border}
+          inActiveStrokeOpacity={0.4}
+          strokeLinecap="round"
         />
-      )}
-      <Text style={[styles.pctText, { color: colors.text }]}>{pct}%</Text>
-      <Text style={[styles.todayText, { color: colors.textSecondary }]}>Today</Text>
+        {/* Value absolutely centered over the ring */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <View style={styles.center}>
+            <Text
+              style={[styles.value, { color: colors.text }]}
+              allowFontScaling={false}
+            >
+              {pct}%
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Label below the ring */}
+      {label ? (
+        <Text
+          style={[styles.label, { color: colors.textSecondary }]}
+          allowFontScaling={false}
+        >
+          {label}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  pctText: {
-    fontSize: TYPOGRAPHY['2xl'],
-    fontWeight: TYPOGRAPHY.heavy
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-
-  todayText: {
+  value: {
+    fontSize: TYPOGRAPHY.xl,
+    fontWeight: TYPOGRAPHY.heavy,
+    textAlign: 'center'
+  },
+  label: {
     fontSize: TYPOGRAPHY.xs,
-    fontWeight: TYPOGRAPHY.medium
+    fontWeight: TYPOGRAPHY.medium,
+    textAlign: 'center'
   }
 });
