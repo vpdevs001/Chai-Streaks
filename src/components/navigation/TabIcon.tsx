@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { RADII, SPACING } from '../../constants';
 
 export default function TabIcon({
   emoji,
@@ -12,35 +13,46 @@ export default function TabIcon({
 }) {
   const { colors } = useTheme();
   return (
-    <View style={styles.wrapper}>
-      <Text style={[styles.emoji, { opacity: focused ? 1 : 0.5 }]}>{emoji}</Text>
-      <Text style={[styles.label, { color: focused ? colors.primary : colors.textMuted }]}>
+    <View
+      style={[
+        styles.wrapper,
+        focused && { backgroundColor: colors.primary + '1A', borderRadius: RADII.lg }
+      ]}
+    >
+      <Text style={[styles.emoji, { opacity: focused ? 1 : 0.55 }]}>{emoji}</Text>
+      <Text
+        style={[
+          styles.label,
+          { color: focused ? colors.primary : colors.textMuted },
+          focused && styles.labelFocused
+        ]}
+      >
         {label}
       </Text>
-      {focused && <View style={[styles.dot, { backgroundColor: colors.primary }]} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
+    flex: 1,
     alignItems: 'center',
-    gap: 2
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: SPACING.xs
   },
 
   emoji: {
-    fontSize: 22
+    fontSize: 24
   },
 
   label: {
-    fontSize: 7,
-    fontWeight: '600'
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3
   },
 
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 2
+  labelFocused: {
+    fontWeight: '800'
   }
 });

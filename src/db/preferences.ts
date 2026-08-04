@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import Storage from 'expo-sqlite/kv-store';
+import { THEME_REGISTRY } from '../theme';
 import { STORAGE_KEYS } from './types';
 
 // ─── Onboarding ──────────────────────────────────────────────────────────────
@@ -60,36 +61,11 @@ export async function clearActiveUserId(): Promise<void> {
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
-export type AppTheme =
-  | 'light'
-  | 'dark'
-  | 'system'
-  | 'forest_dark'
-  | 'forest_light'
-  | 'ocean_dark'
-  | 'ocean_light'
-  | 'lavender_dark'
-  | 'lavender_light'
-  | 'sunset_dark'
-  | 'sunset_light'
-  | 'midnight_sky'
-  | 'nord';
+/** Every valid theme preference — derived from the theme registry, so adding a
+ *  new palette in `theme/index.ts` automatically becomes a valid preference. */
+export type AppTheme = keyof typeof THEME_REGISTRY;
 
-const VALID_THEMES: AppTheme[] = [
-  'light',
-  'dark',
-  'system',
-  'forest_dark',
-  'forest_light',
-  'ocean_dark',
-  'ocean_light',
-  'lavender_dark',
-  'lavender_light',
-  'sunset_dark',
-  'sunset_light',
-  'midnight_sky',
-  'nord'
-];
+const VALID_THEMES = Object.keys(THEME_REGISTRY) as AppTheme[];
 
 export async function getTheme(): Promise<AppTheme> {
   const value = await Storage.getItem(STORAGE_KEYS.THEME);

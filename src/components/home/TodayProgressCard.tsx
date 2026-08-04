@@ -16,8 +16,24 @@ export default function TodayProgressCard({
   totalCount,
   completionRate
 }: Props) {
+  const allDone = totalCount > 0 && completedCount === totalCount;
+  const hint =
+    totalCount === 0
+      ? 'Add a habit below to get started'
+      : allDone
+        ? 'All done — chai time! ☕'
+        : `${totalCount - completedCount} remaining`;
+
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: allDone ? colors.primary + '14' : colors.card,
+          borderColor: allDone ? colors.primary + '44' : colors.border
+        }
+      ]}
+    >
       <View style={styles.left}>
         <Text style={[styles.title, { color: colors.text }]}>Today's Progress</Text>
         <Text style={[styles.sub, { color: colors.textSecondary }]}>
@@ -31,8 +47,8 @@ export default function TodayProgressCard({
             ]}
           />
         </View>
-        <Text style={[styles.hint, { color: colors.textMuted }]}>
-          {totalCount - completedCount} remaining
+        <Text style={[styles.hint, { color: allDone ? colors.primary : colors.textMuted }]}>
+          {hint}
         </Text>
       </View>
       <ProgressRing rate={completionRate} color={colors.primary} />
@@ -78,6 +94,7 @@ const styles = StyleSheet.create({
   },
 
   hint: {
-    fontSize: TYPOGRAPHY.xs
+    fontSize: TYPOGRAPHY.xs,
+    fontWeight: TYPOGRAPHY.semibold
   }
 });

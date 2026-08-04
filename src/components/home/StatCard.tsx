@@ -17,8 +17,10 @@ export default function StatCard({
 }) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Text style={styles.statEmoji}>{emoji}</Text>
+    <View style={[styles.statCard, { backgroundColor: bg, borderColor: colors.border }]}>
+      <View style={[styles.chip, { backgroundColor: color + '1A' }]}>
+        <Text style={styles.statEmoji}>{emoji}</Text>
+      </View>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
     </View>
@@ -32,11 +34,20 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: SPACING.md,
     alignItems: 'center',
-    gap: 2
+    gap: 3
+  },
+
+  chip: {
+    width: 38,
+    height: 38,
+    borderRadius: RADII.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2
   },
 
   statEmoji: {
-    fontSize: 22
+    fontSize: 19
   },
 
   statValue: {

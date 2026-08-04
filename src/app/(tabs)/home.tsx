@@ -171,6 +171,7 @@ export default function HomeScreen() {
             styles.fabBtn,
             {
               backgroundColor: colors.primary,
+              shadowColor: colors.primary,
               opacity: pressed ? 0.9 : 1
             }
           ]}
@@ -236,7 +237,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,
-    shadowColor: '#FF8A3D',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8

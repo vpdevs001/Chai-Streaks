@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
@@ -10,6 +10,11 @@ import { migrateDatabase, hasOnboarded, getActiveUserId } from '../db';
 import { configureNotificationHandler, ensureAndroidChannel } from '../lib/notifications/setup';
 import { resolveNotificationRoute } from '../lib/notifications/deepLink';
 import { reconcileHabitReminders } from '../lib/notifications/schedule';
+
+LogBox.ignoreLogs([
+  'createAnimatedPropAdapter',
+  '`createAnimatedPropAdapter` is no longer necessary in Reanimated 4',
+]);
 
 function AppGate() {
   const { colors, scheme } = useTheme();

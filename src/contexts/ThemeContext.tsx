@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { Colors, type ColorScheme, type ThemeColors } from '../theme';
+import { Colors, THEME_REGISTRY, type ColorScheme, type ThemeColors } from '../theme';
 import { getTheme, setTheme, type AppTheme } from '../db/preferences';
 
 interface ThemeContextValue {
@@ -22,13 +22,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const resolvedTheme = preference === 'system' ? systemScheme : preference;
 
-  const isDark =
-    preference === 'system'
-      ? systemScheme === 'dark'
-      : preference === 'dark' ||
-        preference.endsWith('_dark') ||
-        preference === 'midnight_sky' ||
-        preference === 'nord';
+  // Dark/light resolution comes from the registry's `isDark` flag — null means
+  // "follow the OS" (only the 'system' pseudo-theme uses that).
+  const metaIsDark = THEME_REGISTRY[preference]?.isDark ?? null;
+  const isDark = metaIsDark ?? systemScheme === 'dark';
 
   const scheme: ColorScheme = isDark ? 'dark' : 'light';
   const colors = Colors[resolvedTheme] || Colors.dark;

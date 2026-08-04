@@ -21,7 +21,9 @@ export default function BigStatCard({
 
   return (
     <View style={[styles.bigStat, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Text style={styles.bigStatEmoji}>{emoji}</Text>
+      <View style={[styles.chip, { backgroundColor: color + '1A' }]}>
+        <Text style={styles.bigStatEmoji}>{emoji}</Text>
+      </View>
       <Text style={[styles.bigStatValue, { color }]}>{value}</Text>
       <Text style={[styles.bigStatLabel, { color: colors.textSecondary }]}>{label}</Text>
       {sub && <Text style={[styles.bigStatSub, { color: colors.textMuted }]}>{sub}</Text>}
@@ -39,9 +41,17 @@ const styles = StyleSheet.create({
     gap: 3
   },
 
-  bigStatEmoji: {
-    fontSize: 28,
+  chip: {
+    width: 46,
+    height: 46,
+    borderRadius: RADII.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 2
+  },
+
+  bigStatEmoji: {
+    fontSize: 24
   },
 
   bigStatValue: {

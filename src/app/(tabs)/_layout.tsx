@@ -21,7 +21,18 @@ export default function TabsLayout() {
           paddingBottom: bottomPadding,
           paddingTop: 8
         },
-        tabBarShowLabel: false
+        tabBarShowLabel: false,
+        tabBarItemStyle: {
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center'
+        },
+        tabBarIconStyle: {
+          width: '100%',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
       }}
     >
       <Tabs.Screen

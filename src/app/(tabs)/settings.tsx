@@ -7,22 +7,15 @@ import {
   Platform,
   Pressable,
   Switch,
-  TextInput,
-  Alert
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../contexts/ThemeContext';
-
-let Clipboard: any = null;
-try {
-  Clipboard = require('expo-clipboard');
-} catch (e) {
-  // Safe fallback if native module is not built/linked
-}
+import { THEME_REGISTRY } from '../../theme';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
+
 import {
   resetOnboarding,
   resetAllData,
@@ -42,7 +35,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { reconcileHabitReminders } from '../../lib/notifications/schedule';
 
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, preference } = useTheme();
   const db = useSQLiteContext();
   const [user, setUser] = useState<User | null>(null);
   const [dialog, setDialog] = useState<{
@@ -57,16 +50,13 @@ export default function SettingsScreen() {
 
   const {
     permission,
-    pushToken,
     requestPermission,
     openNotificationSettings,
-    registerPush,
     refreshPermission
   } = useNotifications();
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
   const [quietHoursStart, setQuietHoursStart] = useState('22:00');
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00');
-  const [copiedToken, setCopiedToken] = useState(false);
 
   const loadUser = useCallback(async () => {
     const uid = await ensureActiveUser(db);
@@ -107,41 +97,6 @@ export default function SettingsScreen() {
     }
   };
 
-  // Dev-only debug helper: dump exactly what expo-notifications currently
-  // has registered with the OS. Use this to tell apart "it never got
-  // scheduled" (a bug in our code) from "it was scheduled but the OS never
-  // delivered it" (permissions/battery-optimization/OEM issue) — the two
-  // look identical from the outside otherwise.
-  const handleDebugScheduled = async () => {
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    if (scheduled.length === 0) {
-      Alert.alert('No scheduled notifications', 'expo-notifications has nothing registered.');
-      return;
-    }
-    const lines = scheduled.map((n) => {
-      const trigger: any = n.trigger;
-      const when =
-        trigger?.type === 'daily' || trigger?.hour != null
-          ? `daily @ ${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`
-          : trigger?.type === 'weekly'
-            ? `weekly day ${trigger.weekday} @ ${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`
-            : JSON.stringify(trigger);
-      return `• ${n.content.title} — ${when}`;
-    });
-    Alert.alert(`${scheduled.length} scheduled`, lines.join('\n'));
-  };
-
-  const handleCopyToken = async () => {
-    if (pushToken) {
-      if (Clipboard?.setStringAsync) {
-        await Clipboard.setStringAsync(pushToken);
-        setCopiedToken(true);
-        setTimeout(() => setCopiedToken(false), 2000);
-      } else {
-        console.warn('Clipboard is not available');
-      }
-    }
-  };
 
   // Refresh user data each time the settings tab gains focus
   useFocusEffect(
@@ -201,9 +156,12 @@ export default function SettingsScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowLabel, { color: colors.text }]}>Theme</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>
-                Choose your colour mode
+                {THEME_REGISTRY[preference].emoji} {THEME_REGISTRY[preference].label}
               </Text>
             </View>
+            <Text style={[styles.chevron, { color: colors.textMuted }]}>
+              {showThemePicker ? '▲' : '▼'}
+            </Text>
           </Pressable>
           {showThemePicker && (
             <View
@@ -298,32 +256,6 @@ export default function SettingsScreen() {
             </View>
           )}
 
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-          <SettingsRow
-            emoji="💬"
-            label="Push Token"
-            sublabel={
-              pushToken
-                ? copiedToken
-                  ? 'Copied to clipboard! ✅'
-                  : 'Tap to copy token'
-                : 'Tap to register push token'
-            }
-            onPress={pushToken ? handleCopyToken : registerPush}
-          />
-
-          {__DEV__ && (
-            <>
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
-              <SettingsRow
-                emoji="🛠️"
-                label="Debug: Scheduled Reminders"
-                sublabel="Dev only — see what's actually registered with the OS"
-                onPress={handleDebugScheduled}
-              />
-            </>
-          )}
         </View>
 
         {/* Data */}
@@ -354,8 +286,7 @@ export default function SettingsScreen() {
         <SettingsSectionHeader title="About" />
         <View style={styles.group}>
           <SettingsRow emoji="ℹ️" label="Version" sublabel="1.0.0 (MVP)" />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <SettingsRow emoji="🐙" label="GitHub" sublabel="View source code" onPress={() => {}} />
+
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <SettingsRow
             emoji="🔒"
@@ -454,6 +385,12 @@ const styles = StyleSheet.create({
   rowSub: {
     fontSize: TYPOGRAPHY.xs,
     marginTop: 1
+  },
+
+  chevron: {
+    fontSize: 10,
+    fontWeight: TYPOGRAPHY.bold,
+    marginLeft: SPACING.xs
   },
 
   divider: {

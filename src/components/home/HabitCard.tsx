@@ -97,8 +97,9 @@ export default function HabitCard({
   const isCompleted = status === 'completed';
   const isSkipped = status === 'skipped';
 
-  // Card background/border based on status
-  const cardBg = isCompleted ? colors.cardActive : isSkipped ? colors.danger + '14' : colors.card;
+  // Card background/border based on status — completed cards glow in the
+  // habit's own accent color instead of a generic surface tint.
+  const cardBg = isCompleted ? accentColor + '12' : isSkipped ? colors.danger + '14' : colors.card;
 
   const cardBorderColor = isCompleted
     ? accentColor
@@ -117,13 +118,21 @@ export default function HabitCard({
               backgroundColor: cardBg,
               borderColor: cardBorderColor,
               borderWidth: isCompleted || isSkipped ? 1.5 : StyleSheet.hairlineWidth,
-              opacity: isCompleted ? 0.78 : isSkipped ? 0.72 : 1
+              opacity: isSkipped ? 0.72 : 1
             }
           ]}
         >
+          {/* accent bar in the habit's color */}
+          <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+
           <View style={styles.habitCardRow}>
             {/* icon + name */}
-            <View style={[styles.habitIconWrap, { backgroundColor: accentColor + '22' }]}>
+            <View
+              style={[
+                styles.habitIconWrap,
+                { backgroundColor: accentColor + '22', borderColor: accentColor + '33' }
+              ]}
+            >
               <Text style={styles.habitIcon}>{habit.icon ?? '✨'}</Text>
             </View>
             <View style={styles.habitMeta}>
@@ -243,7 +252,19 @@ const styles = StyleSheet.create({
   habitCardOuter: {
     borderRadius: RADII.lg,
     padding: SPACING.md,
-    gap: SPACING.sm
+    paddingLeft: SPACING.md + 6,
+    gap: SPACING.sm,
+    overflow: 'hidden'
+  },
+
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 6,
+    borderTopRightRadius: RADII.sm,
+    borderBottomRightRadius: RADII.sm
   },
 
   habitCardRow: {
@@ -253,15 +274,16 @@ const styles = StyleSheet.create({
   },
 
   habitIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: RADII.md,
+    width: 48,
+    height: 48,
+    borderRadius: RADII.lg,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center'
   },
 
   habitIcon: {
-    fontSize: 22
+    fontSize: 24
   },
 
   habitMeta: {
@@ -311,8 +333,8 @@ const styles = StyleSheet.create({
   },
 
   actionBtn: {
-    width: 34,
-    height: 34,
+    width: 40,
+    height: 40,
     borderRadius: RADII.full,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -320,7 +342,7 @@ const styles = StyleSheet.create({
   },
 
   actionIcon: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: TYPOGRAPHY.bold
   },
 

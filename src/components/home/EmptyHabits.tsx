@@ -7,7 +7,14 @@ export default function EmptyHabits({ onAdd }: { onAdd: () => void }) {
 
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyEmoji}>🌱</Text>
+      <View
+        style={[
+          styles.emojiRing,
+          { backgroundColor: colors.primary + '14', borderColor: colors.primary + '33' }
+        ]}
+      >
+        <Text style={styles.emptyEmoji}>🌱</Text>
+      </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>No habits yet</Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         Start small. One habit changes everything.
@@ -17,7 +24,9 @@ export default function EmptyHabits({ onAdd }: { onAdd: () => void }) {
           styles.emptyBtn,
           {
             backgroundColor: colors.primary,
-            opacity: pressed ? 0.85 : 1
+            shadowColor: colors.primary,
+            opacity: pressed ? 0.85 : 1,
+            transform: [{ scale: pressed ? 0.97 : 1 }]
           }
         ]}
         onPress={onAdd}
@@ -35,8 +44,18 @@ const styles = StyleSheet.create({
     gap: SPACING.md
   },
 
+  emojiRing: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs
+  },
+
   emptyEmoji: {
-    fontSize: 56
+    fontSize: 48
   },
 
   emptyTitle: {
@@ -54,7 +73,11 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING['2xl'],
-    borderRadius: RADII.full
+    borderRadius: RADII.full,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10
   },
 
   emptyBtnText: {
