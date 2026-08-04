@@ -143,6 +143,21 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
     run: async (db) => {
       await db.execAsync(`ALTER TABLE users ADD COLUMN last_scroll_award_date TEXT;`);
     }
+  },
+  {
+    name: 'v5_add_scroll_blocks_processed',
+    run: async (db) => {
+      // Chai Scroll earning moved from a trailing 7-day rolling window to
+      // fixed, non-overlapping 7-day blocks anchored to the user's account
+      // creation date (see db/scrollMethods.ts). This counter records how
+      // many of those blocks have already been evaluated (pass or fail),
+      // so a block is never re-checked/double-awarded. `last_scroll_award_date`
+      // is kept in the schema (untouched, unused going forward) rather than
+      // dropped, since SQLite migrations here are additive-only.
+      await db.execAsync(
+        `ALTER TABLE users ADD COLUMN scroll_blocks_processed INTEGER NOT NULL DEFAULT 0;`
+      );
+    }
   }
 ];
 

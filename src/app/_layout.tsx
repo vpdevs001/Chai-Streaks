@@ -6,6 +6,7 @@ import { View, ActivityIndicator, LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
+import { HabitsProvider } from '../contexts/HabitsContext';
 import { migrateDatabase, hasOnboarded, getActiveUserId } from '../db';
 import { configureNotificationHandler, ensureAndroidChannel } from '../lib/notifications/setup';
 import { resolveNotificationRoute } from '../lib/notifications/deepLink';
@@ -123,7 +124,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SQLiteProvider databaseName="chaistreaks.db" onInit={migrateDatabase}>
         <ThemeProvider>
-          <AppGate />
+          <HabitsProvider>
+            <AppGate />
+          </HabitsProvider>
         </ThemeProvider>
       </SQLiteProvider>
     </GestureHandlerRootView>

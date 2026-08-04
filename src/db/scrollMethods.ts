@@ -1,110 +1,148 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  db/scrollMethods.ts  –  "Chai Scroll" streak-recovery currency
 //
-//  EARNING  — one scroll is awarded whenever the user maintains a 50%+
-//  overall completion rate across ALL active habits for 7 CONSECUTIVE
-//  calendar days.  The check runs against the trailing 7 days from today.
-//  To prevent minting the same scroll twice in the same 7-day window, the
-//  user row stores `last_scroll_award_date`.  A new scroll is only awarded
-//  once per non-overlapping 7-day block that meets the threshold.
+//  EARNING  — the user's account-creation date anchors a sequence of fixed,
+//  non-overlapping 7-day blocks: days 1–7, days 8–14, days 15–21, and so on.
+//  Once a block has fully elapsed, its overall completion rate (across every
+//  habit that existed during that block) is checked; if it's 60%+, one Chai
+//  Scroll is awarded. Each block is evaluated exactly once — pass or fail —
+//  tracked via `users.scroll_blocks_processed`, so nothing is ever
+//  re-checked or double-awarded, and a block that narrowly misses the
+//  threshold this week can't retroactively earn a scroll later.
 //
 //  SPENDING — spend one scroll to "freeze" a missed day for a habit so its
 //  streak survives the gap instead of resetting to zero.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { type SQLiteDatabase } from 'expo-sqlite';
+import { toDateString, enumerateDates } from './utils';
 
-/** Minimum overall completion rate across all 7 trailing days to earn a scroll. */
-const SCROLL_RATE_THRESHOLD = 0.5; // 50%
+/** Length of one earning block, in days. */
+const BLOCK_LENGTH_DAYS = 7;
+
+/** Minimum overall completion rate across a 7-day block to earn a scroll. */
+const SCROLL_RATE_THRESHOLD = 0.6; // 60%
 
 /**
- * Check whether the user has maintained ≥50% overall completion rate for
- * the past 7 days (including today). If so, and they have not already been
- * awarded a scroll for this 7-day window, award one and record today as the
- * new award date.
+ * Check whether any new 7-day block(s), anchored to the user's account
+ * creation date, have fully elapsed since the last check — and if so,
+ * evaluate each one's completion rate and award a Chai Scroll for every
+ * block that hits the 60% threshold.
  *
- * Call this after any habit toggle so the award fires as soon as the user
- * crosses the threshold.
+ * Call this after any habit toggle (or on app open) so the award fires as
+ * soon as a block completes. Safe to call as often as you like: blocks that
+ * haven't fully elapsed yet are simply skipped until they have, and each
+ * block is processed at most once regardless of how many times this runs.
  *
- * Returns the number of scrolls awarded (0 or 1).
+ * Returns the number of scrolls awarded (usually 0 or 1; can be more than 1
+ * if the app wasn't opened for a while and multiple blocks elapsed at once).
  */
 export async function checkAndAwardUserChaiScroll(
   db: SQLiteDatabase,
   userId: number
 ): Promise<number> {
-  // ── 1. Work out the trailing 7-day window ──────────────────────────────────
-  const today = new Date();
-  const dates: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    dates.push(d.toISOString().slice(0, 10));
-  }
-  const windowStart = dates[0]; // 6 days ago
-  const windowEnd = dates[6]; // today
-
-  // ── 2. Check if we already awarded a scroll for this exact window ──────────
+  // ── 1. Load the user's account creation date + earning progress ───────────
   const userRow = await db.getFirstAsync<{
-    chai_scrolls: number;
-    last_scroll_award_date: string | null;
-  }>(`SELECT chai_scrolls, last_scroll_award_date FROM users WHERE id = ?`, [userId]);
+    created_at: string;
+    scroll_blocks_processed: number;
+  }>(`SELECT created_at, scroll_blocks_processed FROM users WHERE id = ?`, [userId]);
   if (!userRow) return 0;
 
-  // If the last award date falls within [windowStart, windowEnd], we've
-  // already paid out for this window — don't double-mint.
-  const lastAward = userRow.last_scroll_award_date ?? '';
-  if (lastAward >= windowStart && lastAward <= windowEnd) return 0;
+  const accountCreatedDate = userRow.created_at.slice(0, 10); // YYYY-MM-DD
+  const createdAtMidnight = new Date(accountCreatedDate + 'T00:00:00');
+  const todayMidnight = new Date(toDateString(new Date()) + 'T00:00:00');
 
-  // ── 3. Fetch all active habits that existed at the start of the window ─────
-  const habits = await db.getAllAsync<{ id: number; created_at: string }>(
-    `SELECT id, created_at FROM habits
-     WHERE user_id = ? AND is_archived = 0 AND date(created_at) <= ?`,
-    [userId, windowEnd]
+  const daysSinceCreation =
+    Math.floor((todayMidnight.getTime() - createdAtMidnight.getTime()) / 86_400_000) + 1; // creation day counts as day 1
+
+  // How many 7-day blocks have fully elapsed as of today?
+  const fullyElapsedBlocks = Math.floor(daysSinceCreation / BLOCK_LENGTH_DAYS);
+
+  // Nothing new to process (either account is <7 days old, or every elapsed
+  // block has already been checked).
+  if (fullyElapsedBlocks <= userRow.scroll_blocks_processed) return 0;
+
+  // ── 2. Fetch every habit that has ever existed for this user once, up front ─
+  const habits = await db.getAllAsync<{ id: number; created_at: string; is_archived: number }>(
+    `SELECT id, created_at, is_archived FROM habits WHERE user_id = ?`,
+    [userId]
   );
-  if (habits.length === 0) return 0;
 
-  // ── 4. For each day, count completions vs. total eligible habits ───────────
-  let totalPossible = 0;
-  let totalCompleted = 0;
+  let scrollsAwarded = 0;
 
-  for (const date of dates) {
-    // Habits that existed on this date
-    const eligibleHabits = habits.filter((h) => h.created_at.slice(0, 10) <= date);
-    if (eligibleHabits.length === 0) continue;
+  // ── 3. Walk forward one block at a time from where we left off ─────────────
+  // (Normally this loop runs once. It only runs more than once if the app
+  // was closed across multiple full blocks — each still gets its own,
+  // correctly-scoped check.)
+  for (
+    let blockIndex = userRow.scroll_blocks_processed + 1;
+    blockIndex <= fullyElapsedBlocks;
+    blockIndex++
+  ) {
+    const blockStart = new Date(createdAtMidnight);
+    blockStart.setDate(blockStart.getDate() + (blockIndex - 1) * BLOCK_LENGTH_DAYS);
+    const blockEnd = new Date(blockStart);
+    blockEnd.setDate(blockEnd.getDate() + BLOCK_LENGTH_DAYS - 1);
 
-    const habitIds = eligibleHabits.map((h) => h.id);
-    const placeholders = habitIds.map(() => '?').join(', ');
+    const blockStartStr = toDateString(blockStart);
+    const blockEndStr = toDateString(blockEnd);
+    const blockDates = enumerateDates(blockStartStr, blockEndStr);
 
-    const completedOnDay = await db.getFirstAsync<{ cnt: number }>(
-      `SELECT COUNT(*) AS cnt FROM habit_history
-       WHERE habit_id IN (${placeholders})
-         AND date = ?
-         AND status = 'completed'`,
-      [...habitIds, date]
-    );
+    // Habits that existed at some point during this block (created on/before
+    // the block's last day — habits archived mid-block still count for the
+    // days they were active, so no extra filter on is_archived here; a habit
+    // archived before the block even started simply has no history in it).
+    const eligibleHabits = habits.filter((h) => h.created_at.slice(0, 10) <= blockEndStr);
 
-    totalPossible += eligibleHabits.length;
-    totalCompleted += completedOnDay?.cnt ?? 0;
+    let totalPossible = 0;
+    let totalCompleted = 0;
+
+    for (const date of blockDates) {
+      // Only habits that existed by this specific day count toward that day.
+      const habitsOnDay = eligibleHabits.filter((h) => h.created_at.slice(0, 10) <= date);
+      if (habitsOnDay.length === 0) continue;
+
+      const habitIds = habitsOnDay.map((h) => h.id);
+      const placeholders = habitIds.map(() => '?').join(', ');
+
+      const completedOnDay = await db.getFirstAsync<{ cnt: number }>(
+        `SELECT COUNT(*) AS cnt FROM habit_history
+         WHERE habit_id IN (${placeholders})
+           AND date = ?
+           AND status = 'completed'`,
+        [...habitIds, date]
+      );
+
+      totalPossible += habitsOnDay.length;
+      totalCompleted += completedOnDay?.cnt ?? 0;
+    }
+
+    const rate = totalPossible > 0 ? totalCompleted / totalPossible : 0;
+    const earned = totalPossible > 0 && rate >= SCROLL_RATE_THRESHOLD;
+
+    // ── 4. Record the block as processed, and award a scroll if it earned one ─
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      const t = txn as unknown as SQLiteDatabase;
+      if (earned) {
+        await t.runAsync(
+          `UPDATE users
+             SET chai_scrolls = chai_scrolls + 1,
+                 scroll_blocks_processed = ?
+           WHERE id = ?`,
+          [blockIndex, userId]
+        );
+      } else {
+        await t.runAsync(`UPDATE users SET scroll_blocks_processed = ? WHERE id = ?`, [
+          blockIndex,
+          userId
+        ]);
+      }
+    });
+
+    if (earned) scrollsAwarded += 1;
   }
 
-  // ── 5. Check threshold ─────────────────────────────────────────────────────
-  if (totalPossible === 0) return 0;
-  const rate = totalCompleted / totalPossible;
-  if (rate < SCROLL_RATE_THRESHOLD) return 0;
-
-  // ── 6. Award the scroll ────────────────────────────────────────────────────
-  await db.withExclusiveTransactionAsync(async (txn) => {
-    const t = txn as unknown as SQLiteDatabase;
-    await t.runAsync(
-      `UPDATE users
-         SET chai_scrolls = chai_scrolls + 1,
-             last_scroll_award_date = ?
-       WHERE id = ?`,
-      [windowEnd, userId]
-    );
-  });
-
-  return 1;
+  return scrollsAwarded;
 }
 
 /**
