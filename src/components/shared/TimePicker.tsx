@@ -5,6 +5,102 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { parseReminderTime, formatReminderTime } from '../../db/utils';
 
+// Helper to format local display time (e.g., "10:00 PM")
+export function formatDisplayTime(timeStr: string): string {
+  if (!timeStr) return '';
+  const parsed = parseReminderTime(timeStr);
+  if (!parsed) return timeStr;
+  const d = new Date();
+  d.setHours(parsed.hour, parsed.minute, 0, 0);
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+// ─── Single Time Picker (used for Quiet Hours, single time settings, etc.) ───
+
+interface SingleTimePickerProps {
+  value: string; // "HH:MM"
+  onChange: (value: string) => void;
+  label?: string;
+  placeholder?: string;
+}
+
+export function TimePicker({
+  value,
+  onChange,
+  label,
+  placeholder = '10:00 PM'
+}: SingleTimePickerProps) {
+  const { colors, scheme } = useTheme();
+  const [showPicker, setShowPicker] = useState(false);
+
+  const displayVal = formatDisplayTime(value) || placeholder;
+
+  const getPickerDate = () => {
+    const parsed = parseReminderTime(value);
+    const d = new Date();
+    d.setHours(parsed?.hour ?? 22, parsed?.minute ?? 0, 0, 0);
+    return d;
+  };
+
+  const handleTimeChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowPicker(false);
+      if (event.type !== 'set' || !selected) return;
+    }
+    if (selected) {
+      const timeStr = formatReminderTime(selected.getHours(), selected.getMinutes());
+      onChange(timeStr);
+    }
+  };
+
+  return (
+    <View style={styles.singlePickerWrap}>
+      {label ? (
+        <Text style={[styles.singlePickerLabel, { color: colors.textSecondary }]}>{label}</Text>
+      ) : null}
+      <Pressable
+        onPress={() => setShowPicker(true)}
+        style={({ pressed }) => [
+          styles.singlePickerBtn,
+          {
+            backgroundColor: colors.inputBg,
+            borderColor: colors.border,
+            opacity: pressed ? 0.8 : 1
+          }
+        ]}
+      >
+        <Text style={[styles.singlePickerText, { color: value ? colors.text : colors.textMuted }]}>
+          ⏰ {displayVal}
+        </Text>
+      </Pressable>
+
+      {showPicker && (
+        <>
+          <DateTimePicker
+            value={getPickerDate()}
+            mode="time"
+            is24Hour={false}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+            onValueChange={handleTimeChange}
+            onDismiss={() => setShowPicker(false)}
+          />
+          {Platform.OS === 'ios' && (
+            <Pressable
+              onPress={() => setShowPicker(false)}
+              style={({ pressed }) => [styles.doneBtn, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={[styles.doneText, { color: colors.primary }]}>Done</Text>
+            </Pressable>
+          )}
+        </>
+      )}
+    </View>
+  );
+}
+
+// ─── Reminder Picker (for Habit Form Reminders) ─────────────────────────────
+
 interface ReminderPickerProps {
   value: string; // JSON configuration or empty string
   onChange: (value: string) => void;
@@ -16,7 +112,7 @@ interface HourlyConfig {
   interval: number; // hours
 }
 
-export default function ReminderPicker({ value, onChange }: ReminderPickerProps) {
+export function ReminderPicker({ value, onChange }: ReminderPickerProps) {
   const { colors, scheme } = useTheme();
   const [pickerMode, setPickerMode] = useState<'add' | 'start' | 'end' | null>(null);
 
@@ -38,11 +134,9 @@ export default function ReminderPicker({ value, onChange }: ReminderPickerProps)
           hourly = parsed.hourly || { start: '09:00', end: '18:00', interval: 1 };
         }
       } catch (e) {
-        // Fallback
         times = [value];
       }
     } else {
-      // Legacy "HH:MM"
       times = [value];
     }
   }
@@ -94,16 +188,6 @@ export default function ReminderPicker({ value, onChange }: ReminderPickerProps)
     }
   };
 
-  // Helper to format local display time
-  const formatDisplayTime = (timeStr: string) => {
-    const parsed = parseReminderTime(timeStr);
-    if (!parsed) return '';
-    const d = new Date();
-    d.setHours(parsed.hour, parsed.minute, 0, 0);
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  };
-
-  // Determine picker date value
   const getPickerDate = () => {
     let target = '09:00';
     if (pickerMode === 'start') target = hourly.start;
@@ -219,7 +303,6 @@ export default function ReminderPicker({ value, onChange }: ReminderPickerProps)
           {/* Hourly View */}
           {mode === 'hourly' && (
             <View style={styles.hourlySection}>
-              {/* Range pickers */}
               <View style={styles.rangeRow}>
                 <Pressable
                   onPress={() => setPickerMode('start')}
@@ -256,7 +339,6 @@ export default function ReminderPicker({ value, onChange }: ReminderPickerProps)
                 </Pressable>
               </View>
 
-              {/* Interval pickers */}
               <Text style={[styles.intervalTitle, { color: colors.textSecondary }]}>
                 Interval Range
               </Text>
@@ -302,7 +384,8 @@ export default function ReminderPicker({ value, onChange }: ReminderPickerProps)
             is24Hour={false}
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             themeVariant={scheme === 'dark' ? 'dark' : 'light'}
-            onChange={handleTimePickerChange}
+            onValueChange={handleTimePickerChange}
+            onDismiss={() => setPickerMode(null)}
           />
           {Platform.OS === 'ios' && (
             <Pressable
@@ -318,33 +401,51 @@ export default function ReminderPicker({ value, onChange }: ReminderPickerProps)
   );
 }
 
+export default ReminderPicker;
+
 const styles = StyleSheet.create({
+  singlePickerWrap: {
+    gap: 4
+  },
+  singlePickerLabel: {
+    fontSize: TYPOGRAPHY.sm,
+    fontWeight: TYPOGRAPHY.medium
+  },
+  singlePickerBtn: {
+    borderRadius: RADII.md,
+    borderWidth: 1,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 100
+  },
+  singlePickerText: {
+    fontSize: TYPOGRAPHY.sm,
+    fontWeight: TYPOGRAPHY.semibold
+  },
+
   container: {
     paddingVertical: SPACING.xs
   },
-
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
     marginBottom: SPACING.md
   },
-
   rowLabel: {
     fontSize: TYPOGRAPHY.base,
     fontWeight: TYPOGRAPHY.semibold
   },
-
   rowSub: {
     fontSize: TYPOGRAPHY.sm,
     marginTop: 2
   },
-
   body: {
     marginTop: SPACING.xs,
     gap: SPACING.md
   },
-
   tabContainer: {
     flexDirection: 'row',
     borderRadius: RADII.lg,
@@ -352,7 +453,6 @@ const styles = StyleSheet.create({
     padding: 3,
     gap: 3
   },
-
   tab: {
     flex: 1,
     paddingVertical: SPACING.sm,
@@ -360,7 +460,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-
   tabActive: {
     elevation: 1,
     shadowColor: '#000',
@@ -368,16 +467,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2
   },
-
   tabText: {
     fontSize: TYPOGRAPHY.sm,
     fontWeight: TYPOGRAPHY.semibold
   },
-
   specificSection: {
     gap: SPACING.xs
   },
-
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -386,21 +482,17 @@ const styles = StyleSheet.create({
     borderRadius: RADII.lg,
     borderWidth: StyleSheet.hairlineWidth
   },
-
   timeText: {
     fontSize: TYPOGRAPHY.base,
     fontWeight: TYPOGRAPHY.semibold
   },
-
   deleteBtn: {
     padding: 4
   },
-
   deleteIcon: {
     fontSize: TYPOGRAPHY.md,
     fontWeight: TYPOGRAPHY.semibold
   },
-
   addBtn: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -410,21 +502,17 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     marginTop: SPACING.xs
   },
-
   addBtnText: {
     fontSize: TYPOGRAPHY.sm,
     fontWeight: TYPOGRAPHY.bold
   },
-
   hourlySection: {
     gap: SPACING.md
   },
-
   rangeRow: {
     flexDirection: 'row',
     gap: SPACING.sm
   },
-
   timePickerBtn: {
     flex: 1,
     padding: SPACING.md,
@@ -432,19 +520,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center'
   },
-
   rangeLabel: {
     fontSize: 10,
     textTransform: 'uppercase',
     fontWeight: TYPOGRAPHY.bold,
     marginBottom: 4
   },
-
   rangeVal: {
     fontSize: TYPOGRAPHY.base,
     fontWeight: TYPOGRAPHY.semibold
   },
-
   intervalTitle: {
     fontSize: TYPOGRAPHY.xs,
     fontWeight: TYPOGRAPHY.bold,
@@ -452,12 +537,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: SPACING.xs
   },
-
   intervalOptions: {
     flexDirection: 'row',
     gap: SPACING.sm
   },
-
   intervalChip: {
     flex: 1,
     paddingVertical: SPACING.md,
@@ -466,19 +549,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-
   intervalChipText: {
     fontSize: TYPOGRAPHY.xs,
     fontWeight: TYPOGRAPHY.bold
   },
-
   doneBtn: {
     alignSelf: 'flex-end',
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     marginTop: 4
   },
-
   doneText: {
     fontSize: TYPOGRAPHY.base,
     fontWeight: TYPOGRAPHY.bold

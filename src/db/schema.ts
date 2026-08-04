@@ -141,9 +141,7 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
   {
     name: 'v4_add_last_scroll_award_date',
     run: async (db) => {
-      await db.execAsync(
-        `ALTER TABLE users ADD COLUMN last_scroll_award_date TEXT;`
-      );
+      await db.execAsync(`ALTER TABLE users ADD COLUMN last_scroll_award_date TEXT;`);
     }
   }
 ];

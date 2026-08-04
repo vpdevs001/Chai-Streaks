@@ -13,7 +13,7 @@ import { reconcileHabitReminders } from '../lib/notifications/schedule';
 
 LogBox.ignoreLogs([
   'createAnimatedPropAdapter',
-  '`createAnimatedPropAdapter` is no longer necessary in Reanimated 4',
+  '`createAnimatedPropAdapter` is no longer necessary in Reanimated 4'
 ]);
 
 function AppGate() {

@@ -47,10 +47,7 @@ export default function ProgressRing({
         {/* Value absolutely centered over the ring */}
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <View style={styles.center}>
-            <Text
-              style={[styles.value, { color: colors.text }]}
-              allowFontScaling={false}
-            >
+            <Text style={[styles.value, { color: colors.text }]} allowFontScaling={false}>
               {pct}%
             </Text>
           </View>
@@ -59,10 +56,7 @@ export default function ProgressRing({
 
       {/* Label below the ring */}
       {label ? (
-        <Text
-          style={[styles.label, { color: colors.textSecondary }]}
-          allowFontScaling={false}
-        >
+        <Text style={[styles.label, { color: colors.textSecondary }]} allowFontScaling={false}>
           {label}
         </Text>
       ) : null}

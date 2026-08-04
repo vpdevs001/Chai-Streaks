@@ -32,6 +32,7 @@ import SettingsRow from '../../components/settings/SettingsRow';
 import ThemePicker from '../../components/settings/ThemePicker';
 import ProfileCard from '../../components/settings/ProfileCard';
 import { useNotifications } from '../../hooks/useNotifications';
+import { TimePicker } from '../../components/shared/TimePicker';
 import { reconcileHabitReminders } from '../../lib/notifications/schedule';
 
 export default function SettingsScreen() {
@@ -48,12 +49,8 @@ export default function SettingsScreen() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  const {
-    permission,
-    requestPermission,
-    openNotificationSettings,
-    refreshPermission
-  } = useNotifications();
+  const { permission, requestPermission, openNotificationSettings, refreshPermission } =
+    useNotifications();
   const [quietHoursEnabled, setQuietHoursEnabled] = useState(false);
   const [quietHoursStart, setQuietHoursStart] = useState('22:00');
   const [quietHoursEnd, setQuietHoursEnd] = useState('07:00');
@@ -96,7 +93,6 @@ export default function SettingsScreen() {
       await reconcileHabitReminders(db, user.id);
     }
   };
-
 
   // Refresh user data each time the settings tab gains focus
   useFocusEffect(
@@ -217,45 +213,20 @@ export default function SettingsScreen() {
 
           {quietHoursEnabled && (
             <View style={[styles.timeRowContainer, { backgroundColor: colors.card }]}>
-              <View style={styles.timeInputGroup}>
-                <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>Start</Text>
-                <TextInput
-                  style={[
-                    styles.timeInput,
-                    {
-                      color: colors.text,
-                      borderColor: colors.border,
-                      backgroundColor: colors.inputBg
-                    }
-                  ]}
-                  value={quietHoursStart}
-                  onChangeText={saveQuietHoursStart}
-                  placeholder="22:00"
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                />
-              </View>
-              <View style={styles.timeInputGroup}>
-                <Text style={[styles.timeLabel, { color: colors.textSecondary }]}>End</Text>
-                <TextInput
-                  style={[
-                    styles.timeInput,
-                    {
-                      color: colors.text,
-                      borderColor: colors.border,
-                      backgroundColor: colors.inputBg
-                    }
-                  ]}
-                  value={quietHoursEnd}
-                  onChangeText={saveQuietHoursEnd}
-                  placeholder="07:00"
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                />
-              </View>
+              <TimePicker
+                label="Start"
+                value={quietHoursStart}
+                onChange={saveQuietHoursStart}
+                placeholder="10:00 PM"
+              />
+              <TimePicker
+                label="End"
+                value={quietHoursEnd}
+                onChange={saveQuietHoursEnd}
+                placeholder="07:00 AM"
+              />
             </View>
           )}
-
         </View>
 
         {/* Data */}
@@ -415,27 +386,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth
-  },
-
-  timeInputGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm
-  },
-
-  timeLabel: {
-    fontSize: TYPOGRAPHY.sm,
-    fontWeight: TYPOGRAPHY.medium
-  },
-
-  timeInput: {
-    borderRadius: RADII.md,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    fontSize: TYPOGRAPHY.sm,
-    textAlign: 'center',
-    width: 70
   },
 
   tagline: {

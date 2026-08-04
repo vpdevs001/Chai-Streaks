@@ -50,9 +50,9 @@ function streakBonus(streak: number): number {
  *   Missed days contribute 0 — they are neutral.
  */
 function singleHabitScore(h: ChaiScoreHabitInput): number {
-  const completionScore = h.completionRate * 50;   // 0–50
-  const streakScore     = streakBonus(h.currentStreak) * 30; // 0–30
-  const failurePenalty  = h.failureRate * 40;       // 0–40
+  const completionScore = h.completionRate * 50; // 0–50
+  const streakScore = streakBonus(h.currentStreak) * 30; // 0–30
+  const failurePenalty = h.failureRate * 40; // 0–40
 
   const raw = completionScore + streakScore - failurePenalty;
   return Math.min(100, Math.max(0, raw));

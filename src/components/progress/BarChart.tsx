@@ -17,19 +17,14 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
 
   // Available width = screen - outer padding - card padding
   const availableW = width - SPACING.base * 2 - CARD_H_PADDING;
-  const barW =
-    mode === '7'
-      ? (availableW - BAR_GAP * 6) / 7
-      : BAR_W_30;
+  const barW = mode === '7' ? (availableW - BAR_GAP * 6) / 7 : BAR_W_30;
 
   const selectedBar = selectedDate ? (bars.find((b) => b.date === selectedDate) ?? null) : null;
   const hasTrackedHabits = !!selectedBar && selectedBar.total > 0;
   const selCompleted = selectedBar?.count ?? 0;
   const selSkipped = selectedBar?.skipped ?? 0;
   const selMissed = selectedBar ? Math.max(0, selectedBar.total - selCompleted - selSkipped) : 0;
-  const selPct = hasTrackedHabits
-    ? Math.round((selCompleted / selectedBar!.total) * 100)
-    : 0;
+  const selPct = hasTrackedHabits ? Math.round((selCompleted / selectedBar!.total) * 100) : 0;
 
   return (
     <View style={styles.chartWrap}>
@@ -47,26 +42,19 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
         horizontal
         scrollEnabled={mode === '30'}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.barsRow,
-          mode === '7' && { width: availableW }
-        ]}
+        contentContainerStyle={[styles.barsRow, mode === '7' && { width: availableW }]}
         ItemSeparatorComponent={() => <View style={{ width: BAR_GAP }} />}
         renderItem={({ item: bar, index: i }) => {
           const fillH = bar.total > 0 ? (bar.count / bar.total) * CHART_H : 0;
           const isToday = i === bars.length - 1;
           const isEmpty = bar.count === 0;
           const isSelected = selectedDate === bar.date;
-          const showDateLabel =
-            mode === '7' || i % 7 === 0 || i === bars.length - 1;
+          const showDateLabel = mode === '7' || i % 7 === 0 || i === bars.length - 1;
 
           return (
             <Pressable
               onPress={() => setSelectedDate(isSelected ? null : bar.date)}
-              style={({ pressed }) => [
-                styles.barCol,
-                { width: barW, opacity: pressed ? 0.7 : 1 }
-              ]}
+              style={({ pressed }) => [styles.barCol, { width: barW, opacity: pressed ? 0.7 : 1 }]}
             >
               {/* count label on top for 7-day */}
               {mode === '7' && bar.count > 0 && (
@@ -163,9 +151,7 @@ export default function BarChart({ bars, mode }: { bars: DayBar[]; mode: '7' | '
                   </Text>
                 </View>
               )}
-              <Text style={[styles.selectedPct, { color: colors.primary }]}>
-                {selPct}%
-              </Text>
+              <Text style={[styles.selectedPct, { color: colors.primary }]}>{selPct}%</Text>
             </View>
           ) : (
             <Text style={[styles.selectedInfoDetail, { color: colors.textSecondary }]}>

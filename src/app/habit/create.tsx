@@ -24,7 +24,7 @@ import Label from '../../components/habit/Label';
 import HabitFormAppearance from '../../components/habit/HabitFormAppearance';
 import HabitFormFrequency from '../../components/habit/HabitFormFrequency';
 import HabitFormPriority from '../../components/habit/HabitFormPriority';
-import ReminderPicker from '../../components/habit/ReminderPicker';
+import ReminderPicker from '../../components/shared/TimePicker';
 
 export default function CreateHabitScreen() {
   const { colors } = useTheme();

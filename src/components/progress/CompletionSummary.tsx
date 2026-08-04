@@ -27,9 +27,7 @@ function RateBar({
             ]}
           />
         </View>
-        <Text style={[styles.completionPct, { color: pctColor }]}>
-          {Math.round(rate * 100)}%
-        </Text>
+        <Text style={[styles.completionPct, { color: pctColor }]}>{Math.round(rate * 100)}%</Text>
       </View>
     </>
   );

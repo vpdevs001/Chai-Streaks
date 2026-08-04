@@ -41,13 +41,13 @@ export async function checkAndAwardUserChaiScroll(
     dates.push(d.toISOString().slice(0, 10));
   }
   const windowStart = dates[0]; // 6 days ago
-  const windowEnd   = dates[6]; // today
+  const windowEnd = dates[6]; // today
 
   // ── 2. Check if we already awarded a scroll for this exact window ──────────
-  const userRow = await db.getFirstAsync<{ chai_scrolls: number; last_scroll_award_date: string | null }>(
-    `SELECT chai_scrolls, last_scroll_award_date FROM users WHERE id = ?`,
-    [userId]
-  );
+  const userRow = await db.getFirstAsync<{
+    chai_scrolls: number;
+    last_scroll_award_date: string | null;
+  }>(`SELECT chai_scrolls, last_scroll_award_date FROM users WHERE id = ?`, [userId]);
   if (!userRow) return 0;
 
   // If the last award date falls within [windowStart, windowEnd], we've
@@ -83,7 +83,7 @@ export async function checkAndAwardUserChaiScroll(
       [...habitIds, date]
     );
 
-    totalPossible  += eligibleHabits.length;
+    totalPossible += eligibleHabits.length;
     totalCompleted += completedOnDay?.cnt ?? 0;
   }
 

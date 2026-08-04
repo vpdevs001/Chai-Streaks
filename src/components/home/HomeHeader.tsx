@@ -34,9 +34,7 @@ export default function HomeHeader({ colors, user }: Props) {
             }
           ]}
         >
-          <Text style={[styles.scrollBadgeText, { color: colors.warning }]}>
-            📜 {chaiScrolls}
-          </Text>
+          <Text style={[styles.scrollBadgeText, { color: colors.warning }]}>📜 {chaiScrolls}</Text>
         </View>
         <Pressable
           style={({ pressed }) => [
