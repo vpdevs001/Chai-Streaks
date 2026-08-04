@@ -39,11 +39,17 @@ export default function ProgressScreen() {
   const bestStreak = habits.reduce((m, h) => Math.max(m, h.longest_streak), 0);
   const totalCompletions = habits.reduce((s, h) => s + h.total_completions, 0);
   const chaiScore = computeChaiScore(habitsToChaiScoreInputs(habits));
+
+  // Use bars from the active period for period-specific rates
   const barsCurrent = tab === '7' ? bars7 : bars30;
   const totalPossible = barsCurrent.reduce((s, b) => s + b.total, 0);
   const totalDone = barsCurrent.reduce((s, b) => s + b.count, 0);
+  const totalFailures = barsCurrent.reduce((s, b) => s + b.skipped, 0);
+  const totalMissed = Math.max(0, totalPossible - totalDone - totalFailures);
   const periodRate = totalPossible > 0 ? totalDone / totalPossible : 0;
-  const failureRate = totalPossible > 0 ? 1 - periodRate : 0;
+  const failureRate = totalPossible > 0 ? totalFailures / totalPossible : 0;
+  const missedRate = totalPossible > 0 ? totalMissed / totalPossible : 0;
+  const periodLabel = `${tab}-day period`;
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
@@ -92,24 +98,43 @@ export default function ProgressScreen() {
             color={colors.primary}
           />
           <BigStatCard
-            emoji="✅"
-            label="Total Completions"
-            value={totalCompletions}
-            color={colors.success}
-          />
-          <BigStatCard
             emoji="📈"
             label="Success Rate"
             value={`${Math.round(periodRate * 100)}%`}
-            sub={`${tab === '7' ? '7' : '30'}-day period`}
+            sub={periodLabel}
             color="#8B5CF6"
           />
           <BigStatCard
             emoji="📉"
             label="Failure Rate"
             value={`${Math.round(failureRate * 100)}%`}
-            sub={`${tab === '7' ? '7' : '30'}-day period`}
+            sub={periodLabel}
             color={colors.danger}
+          />
+          <BigStatCard
+            emoji="💨"
+            label="Missed Rate"
+            value={`${Math.round(missedRate * 100)}%`}
+            sub={periodLabel}
+            color={colors.textMuted}
+          />
+          <BigStatCard
+            emoji="✅"
+            label="Total Completions"
+            value={totalCompletions}
+            color={colors.success}
+          />
+          <BigStatCard
+            emoji="❌"
+            label="Total Failures"
+            value={totalFailures}
+            color={colors.danger}
+          />
+          <BigStatCard
+            emoji="🕳️"
+            label="Total Missed"
+            value={totalMissed}
+            color={colors.textMuted}
           />
         </View>
 

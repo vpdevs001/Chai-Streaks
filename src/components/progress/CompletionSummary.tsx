@@ -3,14 +3,49 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import type { DayBar } from '../../hooks/useStats';
 
+function RateBar({
+  label,
+  rate,
+  fillColor,
+  pctColor
+}: {
+  label: string;
+  rate: number;
+  fillColor: string;
+  pctColor: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <>
+      <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={styles.completionRow}>
+        <View style={[styles.completionTrack, { backgroundColor: colors.border }]}>
+          <View
+            style={[
+              styles.completionFill,
+              { width: `${Math.min(rate * 100, 100)}%`, backgroundColor: fillColor }
+            ]}
+          />
+        </View>
+        <Text style={[styles.completionPct, { color: pctColor }]}>
+          {Math.round(rate * 100)}%
+        </Text>
+      </View>
+    </>
+  );
+}
+
 export default function CompletionSummary({ bars }: { bars: DayBar[] }) {
   const { colors } = useTheme();
+
   const totalPossible = bars.reduce((s, b) => s + b.total, 0);
   const totalDone = bars.reduce((s, b) => s + b.count, 0);
   const totalSkipped = bars.reduce((s, b) => s + b.skipped, 0);
   const totalMissed = Math.max(0, totalPossible - totalDone - totalSkipped);
-  const rate = totalPossible > 0 ? totalDone / totalPossible : 0;
-  const failureRate = totalPossible > 0 ? (totalSkipped + totalMissed) / totalPossible : 0;
+
+  const completionRate = totalPossible > 0 ? totalDone / totalPossible : 0;
+  const failureRate = totalPossible > 0 ? totalSkipped / totalPossible : 0;
+  const missedRate = totalPossible > 0 ? totalMissed / totalPossible : 0;
 
   return (
     <View
@@ -18,43 +53,33 @@ export default function CompletionSummary({ bars }: { bars: DayBar[] }) {
     >
       <Text style={[styles.completionTitle, { color: colors.text }]}>Completion Breakdown</Text>
 
-      <Text style={[styles.barLabel, { color: colors.textSecondary }]}>Completion Rate</Text>
-      <View style={styles.completionRow}>
-        {/* Bar */}
-        <View style={[styles.completionTrack, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.completionFill,
-              { width: `${rate * 100}%`, backgroundColor: colors.success }
-            ]}
-          />
-        </View>
-        <Text style={[styles.completionPct, { color: colors.primary }]}>
-          {Math.round(rate * 100)}%
-        </Text>
-      </View>
+      <RateBar
+        label="Completion Rate"
+        rate={completionRate}
+        fillColor={colors.success}
+        pctColor={colors.success}
+      />
 
-      {/* Failure rate bar — mirrors the completion bar above */}
-      <Text style={[styles.barLabel, { color: colors.textSecondary }]}>Failure Rate</Text>
-      <View style={styles.completionRow}>
-        <View style={[styles.completionTrack, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.completionFill,
-              { width: `${failureRate * 100}%`, backgroundColor: colors.danger }
-            ]}
-          />
-        </View>
-        <Text style={[styles.completionPct, { color: colors.danger }]}>
-          {Math.round(failureRate * 100)}%
-        </Text>
-      </View>
+      <RateBar
+        label="Failure Rate"
+        rate={failureRate}
+        fillColor={colors.danger}
+        pctColor={colors.danger}
+      />
 
+      <RateBar
+        label="Missed Rate"
+        rate={missedRate}
+        fillColor={colors.textMuted}
+        pctColor={colors.textMuted}
+      />
+
+      {/* Legend */}
       <View style={styles.completionLegend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
           <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-            Completed: {totalDone}
+            Done: {totalDone}
           </Text>
         </View>
         <View style={styles.legendItem}>
@@ -64,7 +89,7 @@ export default function CompletionSummary({ bars }: { bars: DayBar[] }) {
           </Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: colors.border }]} />
+          <View style={[styles.legendDot, { backgroundColor: colors.textMuted }]} />
           <Text style={[styles.legendText, { color: colors.textSecondary }]}>
             Missed: {totalMissed}
           </Text>
@@ -121,7 +146,8 @@ const styles = StyleSheet.create({
 
   completionLegend: {
     flexDirection: 'row',
-    gap: SPACING.lg
+    gap: SPACING.lg,
+    flexWrap: 'wrap'
   },
 
   legendItem: {
