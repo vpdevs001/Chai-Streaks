@@ -27,12 +27,19 @@ const RATE_WINDOW_DAYS = 30;
  * Insert a new habit. Returns the full created row.
  */
 export async function createHabit(db: SQLiteDatabase, input: CreateHabitInput): Promise<Habit> {
+  // Get the next sort_order for this user
+  const maxSort = await db.getFirstAsync<{ max_sort: number | null }>(
+    `SELECT MAX(sort_order) AS max_sort FROM habits WHERE user_id = ?`,
+    [input.user_id]
+  );
+  const nextSort = (maxSort?.max_sort ?? -1) + 1;
+
   const result = await db.runAsync(
     `INSERT INTO habits
        (user_id, title, description, icon, color,
         frequency_type, frequency_days, target_count, priority,
-        reminder_status, reminder_time, notification_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        reminder_status, reminder_time, notification_id, category, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.user_id,
       input.title,
@@ -45,7 +52,9 @@ export async function createHabit(db: SQLiteDatabase, input: CreateHabitInput): 
       input.priority ?? 'medium',
       input.reminder_status ?? 'disabled',
       input.reminder_time ?? null,
-      input.notification_id ?? null
+      input.notification_id ?? null,
+      input.category ?? 'general',
+      input.sort_order ?? nextSort
     ]
   );
 
@@ -63,12 +72,12 @@ export async function getHabitById(db: SQLiteDatabase, id: number): Promise<Habi
   return db.getFirstAsync<Habit>(`SELECT * FROM habits WHERE id = ?`, [id]);
 }
 
-/** Fetch all active (non-archived) habits for a user. */
+/** Fetch all active (non-archived) habits for a user, sorted by sort_order. */
 export async function getActiveHabits(db: SQLiteDatabase, userId: number): Promise<Habit[]> {
   return db.getAllAsync<Habit>(
     `SELECT * FROM habits
      WHERE user_id = ? AND is_archived = 0
-     ORDER BY created_at ASC`,
+     ORDER BY sort_order ASC, created_at ASC`,
     [userId]
   );
 }
@@ -161,12 +170,12 @@ export async function getHabitsWithStreaks(
   // Compute streaks + windowed rates in JS (no DB calls in this loop)
   return habits.map((habit) => {
     const dates = datesByHabit.get(habit.id) ?? [];
-    const { currentStreak, longestStreak } = computeStreaks(dates);
+    const createdDateStr = habit.created_at.slice(0, 10);
+    const { currentStreak, longestStreak } = computeStreaks(dates, createdDateStr);
 
     // A habit is only ever judged from the day it was created onward, and
     // never against days before it existed — and never against a 30-day
     // window it hasn't lived through yet.
-    const createdDateStr = habit.created_at.slice(0, 10);
     const rangeStart = createdDateStr > windowStartStr ? createdDateStr : windowStartStr;
 
     // Fully-elapsed days only (up to yesterday). Today isn't over yet, so
@@ -293,4 +302,22 @@ export async function setHabitNotificationId(
  */
 export async function deleteHabit(db: SQLiteDatabase, id: number): Promise<void> {
   await db.runAsync(`DELETE FROM habits WHERE id = ?`, [id]);
+}
+
+// ─── Reorder ──────────────────────────────────────────────────────────────────
+
+/**
+ * Update the sort_order for a list of habits. The array index becomes the
+ * new sort_order value.
+ */
+export async function reorderHabits(
+  db: SQLiteDatabase,
+  habitIds: number[]
+): Promise<void> {
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    const t = txn as unknown as SQLiteDatabase;
+    for (let i = 0; i < habitIds.length; i++) {
+      await t.runAsync(`UPDATE habits SET sort_order = ? WHERE id = ?`, [i, habitIds[i]]);
+    }
+  });
 }
