@@ -26,6 +26,7 @@ export {
   getHabitById,
   getHabitsWithReminders,
   getHabitsWithStreaks,
+  reorderHabits,
   setHabitNotificationId,
   updateHabit
 } from './habitMethods';
@@ -47,6 +48,30 @@ export {
   maybeAwardChaiScroll,
   recoverHabitStreak
 } from './scrollMethods';
+
+// Badges
+export {
+  BADGE_DEFINITIONS,
+  computeAccountStreak,
+  evaluateAndAwardBadges,
+  getUnseenBadgeCount,
+  getUserBadges,
+  markBadgesSeen,
+  type BadgeDefinition
+} from './badgeMethods';
+
+// Time tracking
+export {
+  deleteTimeEntry,
+  getDailyTimeTotals,
+  getRecentTimeEntries,
+  getRunningTimeEntry,
+  getTimeEntriesForDate,
+  getTimeEntriesInRange,
+  startTimeEntry,
+  stopTimeEntry,
+  updateTimeEntry
+} from './timeMethods';
 
 // Preferences (AsyncStorage)
 export {
