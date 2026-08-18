@@ -109,24 +109,33 @@ export function buildSetClause(fields: Record<string, SQLiteBindValue | undefine
 /**
  * Given a sorted (ascending) array of YYYY-MM-DD completion date strings,
  * compute the current streak (from today backwards) and longest streak.
+ *
+ * @param createdDate  Optional YYYY-MM-DD — dates before this are ignored,
+ *                     so a habit's streak only counts from when it was created.
  */
-export function computeStreaks(completedDates: string[]): {
+export function computeStreaks(
+  completedDates: string[],
+  createdDate?: string
+): {
   currentStreak: number;
   longestStreak: number;
 } {
-  if (completedDates.length === 0) return { currentStreak: 0, longestStreak: 0 };
+  // Filter out dates before the habit was created
+  const filtered = createdDate ? completedDates.filter((d) => d >= createdDate) : completedDates;
+
+  if (filtered.length === 0) return { currentStreak: 0, longestStreak: 0 };
 
   const today = todayDateString();
-  const dateSet = new Set(completedDates);
-  const sorted = [...completedDates].sort(); // ascending
+  const dateSet = new Set(filtered);
+  const sorted = [...filtered].sort(); // ascending
 
   // ── longest streak (scan forward) ───────────────────────────────────────
   let longestStreak = 1;
   let runLength = 1;
 
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]);
-    const curr = new Date(sorted[i]);
+    const prev = new Date(sorted[i - 1] + 'T00:00:00');
+    const curr = new Date(sorted[i] + 'T00:00:00');
     const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays === 1) {
       runLength++;
@@ -138,7 +147,7 @@ export function computeStreaks(completedDates: string[]): {
 
   // ── current streak (scan backward from today) ────────────────────────────
   let currentStreak = 0;
-  const cursor = new Date(today);
+  const cursor = new Date(today + 'T00:00:00');
 
   while (dateSet.has(toDateString(cursor))) {
     currentStreak++;

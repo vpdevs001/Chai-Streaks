@@ -43,6 +43,10 @@ export interface Habit {
   /** expo-notifications identifier, stored so we can cancel it later */
   notification_id: string | null;
   is_archived: number; // SQLite has no BOOLEAN; 0 = false, 1 = true
+  /** Category for grouping habits (e.g. 'health', 'work', 'mindfulness'). */
+  category: string;
+  /** Manual sort order for the home screen list. */
+  sort_order: number;
   /**
    * Highest current_streak length this habit has already paid out a Chai
    * Scroll for (see db/scrollMethods.ts). Prevents re-awarding a scroll
@@ -68,6 +72,8 @@ export type CreateHabitInput = Pick<
       | 'reminder_status'
       | 'reminder_time'
       | 'notification_id'
+      | 'category'
+      | 'sort_order'
     >
   > & { user_id: number };
 
@@ -86,6 +92,8 @@ export type UpdateHabitInput = Partial<
     | 'reminder_time'
     | 'notification_id'
     | 'is_archived'
+    | 'category'
+    | 'sort_order'
   >
 >;
 
@@ -160,11 +168,43 @@ export interface MonthlySummary {
   completion_rate: number;
 }
 
+// ── Badges ──────────────────────────────────
+
+export interface UserBadge {
+  id: number;
+  user_id: number;
+  badge_key: string;
+  earned_at: string;
+  seen: number; // 0 = unseen, 1 = seen
+}
+
+// ── Time Entries ─────────────────────────────
+
+export interface TimeEntry {
+  id: number;
+  user_id: number;
+  habit_id: number | null;
+  task_name: string;
+  start_time: string; // ISO-8601
+  end_time: string | null; // null = still running
+  duration_seconds: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateTimeEntryInput = Pick<TimeEntry, 'user_id' | 'task_name' | 'start_time'> &
+  Partial<Pick<TimeEntry, 'habit_id' | 'end_time' | 'duration_seconds'>>;
+
+export type UpdateTimeEntryInput = Partial<
+  Pick<TimeEntry, 'task_name' | 'habit_id' | 'end_time' | 'duration_seconds'>
+>;
+
 // ── AsyncStorage keys (re-exported for convenience) ──
 
 export const STORAGE_KEYS = {
   HAS_ONBOARDED: '@habit_tracker/has_onboarded',
   ACTIVE_USER_ID: '@habit_tracker/active_user_id',
   THEME: '@habit_tracker/theme',
-  NOTIFICATION_PERMISSION: '@habit_tracker/notification_permission'
+  NOTIFICATION_PERMISSION: '@habit_tracker/notification_permission',
+  LAST_OPENED_DATE: '@habit_tracker/last_opened_date'
 } as const;

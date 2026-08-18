@@ -158,6 +158,75 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
         `ALTER TABLE users ADD COLUMN scroll_blocks_processed INTEGER NOT NULL DEFAULT 0;`
       );
     }
+  },
+  {
+    name: 'v6_add_badges',
+    run: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS user_badges (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id     INTEGER NOT NULL,
+          badge_key   TEXT    NOT NULL,
+          earned_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+          seen        INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+          UNIQUE (user_id, badge_key)
+        );
+      `);
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_user_badges_user_id
+          ON user_badges (user_id);
+      `);
+    }
+  },
+  {
+    name: 'v7_add_time_entries',
+    run: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS time_entries (
+          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id          INTEGER NOT NULL,
+          habit_id         INTEGER,
+          task_name        TEXT    NOT NULL,
+          start_time       TEXT    NOT NULL,
+          end_time         TEXT,
+          duration_seconds INTEGER NOT NULL DEFAULT 0,
+          created_at       TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+          updated_at       TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+          FOREIGN KEY (user_id)  REFERENCES users  (id) ON DELETE CASCADE,
+          FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE SET NULL
+        );
+      `);
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_time_entries_user_id
+          ON time_entries (user_id);
+      `);
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_time_entries_start_time
+          ON time_entries (start_time);
+      `);
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_time_entries_user_date
+          ON time_entries (user_id, start_time);
+      `);
+      await db.execAsync(`
+        CREATE TRIGGER IF NOT EXISTS trg_time_entries_updated_at
+        AFTER UPDATE ON time_entries
+        BEGIN
+          UPDATE time_entries SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+          WHERE id = NEW.id;
+        END;
+      `);
+    }
+  },
+  {
+    name: 'v8_add_habit_category_sort',
+    run: async (db) => {
+      await db.execAsync(`ALTER TABLE habits ADD COLUMN category TEXT NOT NULL DEFAULT 'general';`);
+      await db.execAsync(
+        `ALTER TABLE habits ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;`
+      );
+    }
   }
 ];
 
