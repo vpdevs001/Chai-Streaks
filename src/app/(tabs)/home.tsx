@@ -22,6 +22,8 @@ import TodayProgressCard from '../../components/home/TodayProgressCard';
 import StatCard from '../../components/home/StatCard';
 import HabitCard from '../../components/home/HabitCard';
 import EmptyHabits from '../../components/home/EmptyHabits';
+import MissedHabitsDialog from '../../components/home/MissedHabitsDialog';
+import TimerCard from '../../components/home/TimerCard';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -37,7 +39,13 @@ export default function HomeScreen() {
     chaiScrolls,
     scrollsAwarded,
     clearScrollsAwarded,
-    recoverStreak
+    recoverStreak,
+    accountStreak,
+    accountLongestStreak,
+    missedYesterdayHabits,
+    showMissedDialog,
+    dismissMissedDialog,
+    markMissedHabit
   } = useHabits();
 
   useFocusEffect(
@@ -55,8 +63,6 @@ export default function HomeScreen() {
     }
   }, [scrollsAwarded, clearScrollsAwarded]);
 
-  const maxStreak = habits.reduce((m, h) => Math.max(m, h.current_streak), 0);
-  const bestStreak = habits.reduce((m, h) => Math.max(m, h.longest_streak), 0);
   const chaiScore = computeChaiScore(habitsToChaiScoreInputs(habits));
   const fabAnim = useRef(new Animated.Value(1)).current;
 
@@ -96,14 +102,14 @@ export default function HomeScreen() {
         <StatCard
           emoji="🔥"
           label="Streak"
-          value={`${maxStreak}d`}
+          value={`${accountStreak}d`}
           color="#EF4444"
           bg={colors.card}
         />
         <StatCard
           emoji="🏆"
           label="Best"
-          value={`${bestStreak}d`}
+          value={`${accountLongestStreak}d`}
           color={colors.primary}
           bg={colors.card}
         />
@@ -115,6 +121,9 @@ export default function HomeScreen() {
           bg={colors.card}
         />
       </View>
+
+      {/* Time Tracker */}
+      <TimerCard />
 
       {/* Habits section header */}
       <View style={styles.sectionHeader}>
@@ -180,6 +189,14 @@ export default function HomeScreen() {
           <Text style={styles.fabIcon}>+</Text>
         </Pressable>
       </Animated.View>
+
+      {/* Missed habits verification dialog */}
+      <MissedHabitsDialog
+        visible={showMissedDialog}
+        habits={missedYesterdayHabits}
+        onMark={markMissedHabit}
+        onDismiss={dismissMissedDialog}
+      />
     </SafeAreaView>
   );
 }

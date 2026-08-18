@@ -38,6 +38,7 @@ import CalendarHeatmap from '../../components/habit/CalendarHeatmap';
 import HabitFormAppearance from '../../components/habit/HabitFormAppearance';
 import HabitFormFrequency from '../../components/habit/HabitFormFrequency';
 import HabitFormPriority from '../../components/habit/HabitFormPriority';
+import HabitFormCategory from '../../components/habit/HabitFormCategory';
 import HabitDangerZone from '../../components/habit/HabitDangerZone';
 import ReminderPicker from '../../components/shared/TimePicker';
 
@@ -62,6 +63,7 @@ export default function EditHabitScreen() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [targetCount, setTargetCount] = useState(1);
   const [priority, setPriority] = useState<HabitPriority>('medium');
+  const [category, setCategory] = useState('general');
   const [reminderTime, setReminderTime] = useState('');
   const [history, setHistory] = useState<
     Record<string, 'completed' | 'skipped' | 'partial' | 'frozen'>
@@ -86,6 +88,7 @@ export default function EditHabitScreen() {
           setSelectedDays(JSON.parse(h.frequency_days || '[]'));
           setTargetCount(h.target_count);
           setPriority(h.priority ?? 'medium');
+          setCategory(h.category ?? 'general');
           setReminderTime(h.reminder_time ?? '');
         }
       })
@@ -136,6 +139,7 @@ export default function EditHabitScreen() {
         ),
         target_count: targetCount,
         priority,
+        category,
         reminder_status: reminderTime ? 'enabled' : 'disabled',
         reminder_time: reminderTime || null,
         notification_id: null // Reset to empty first, will be set below if enabled
@@ -305,6 +309,8 @@ export default function EditHabitScreen() {
             />
 
             <HabitFormPriority colors={colors} priority={priority} onChange={setPriority} />
+
+            <HabitFormCategory category={category} onChange={setCategory} />
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>

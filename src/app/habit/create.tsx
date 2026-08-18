@@ -24,6 +24,8 @@ import Label from '../../components/habit/Label';
 import HabitFormAppearance from '../../components/habit/HabitFormAppearance';
 import HabitFormFrequency from '../../components/habit/HabitFormFrequency';
 import HabitFormPriority from '../../components/habit/HabitFormPriority';
+import HabitFormCategory from '../../components/habit/HabitFormCategory';
+import HabitTemplates, { type HabitTemplate } from '../../components/habit/HabitTemplates';
 import ReminderPicker from '../../components/shared/TimePicker';
 
 export default function CreateHabitScreen() {
@@ -38,9 +40,20 @@ export default function CreateHabitScreen() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [targetCount, setTargetCount] = useState(1);
   const [priority, setPriority] = useState<HabitPriority>('medium');
+  const [category, setCategory] = useState('general');
   const [reminderTime, setReminderTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [showTemplates, setShowTemplates] = useState(true);
+
+  const handleTemplateSelect = (template: HabitTemplate) => {
+    setTitle(template.title);
+    setDescription(template.description);
+    setIcon(template.icon);
+    setColor(template.color);
+    setCategory(template.category);
+    setShowTemplates(false);
+  };
 
   const toggleDay = (i: number) => {
     setSelectedDays((prev) => (prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i]));
@@ -71,6 +84,7 @@ export default function CreateHabitScreen() {
         ),
         target_count: targetCount,
         priority,
+        category,
         reminder_status: reminderTime ? 'enabled' : 'disabled',
         reminder_time: reminderTime || undefined
       });
@@ -126,6 +140,9 @@ export default function CreateHabitScreen() {
                 {title || 'Your new habit'}
               </Text>
             </View>
+
+            {/* Quick-add templates */}
+            {showTemplates && <HabitTemplates onSelect={handleTemplateSelect} />}
 
             {/* Basic info */}
             <Section title="Basic Information" colors={colors}>
@@ -189,6 +206,8 @@ export default function CreateHabitScreen() {
             />
 
             <HabitFormPriority colors={colors} priority={priority} onChange={setPriority} />
+
+            <HabitFormCategory category={category} onChange={setCategory} />
 
             {/* Reminder */}
             <Section title="Reminder" colors={colors}>

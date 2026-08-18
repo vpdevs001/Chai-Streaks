@@ -23,7 +23,12 @@ import {
   ensureActiveUser,
   getUserById,
   getPreference,
-  setPreference
+  setPreference,
+  getActiveHabits,
+  getAllHabitsHistoryForDate,
+  getUserBadges,
+  getRecentTimeEntries,
+  BADGE_DEFINITIONS
 } from '../../db';
 import type { User } from '../../db/types';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
@@ -48,6 +53,7 @@ export default function SettingsScreen() {
   } | null>(null);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const { permission, requestPermission, openNotificationSettings, refreshPermission } =
     useNotifications();
@@ -100,6 +106,64 @@ export default function SettingsScreen() {
       loadUser();
     }, [loadUser])
   );
+
+  const handleExportData = async () => {
+    if (!user) return;
+    setExporting(true);
+    try {
+      const habits = await getActiveHabits(db, user.id);
+      const badges = await getUserBadges(db, user.id);
+      const timeEntries = await getRecentTimeEntries(db, user.id, 1000);
+
+      // Gather all history for the user (query directly for all dates)
+      const allHistory = await db.getAllAsync(
+        `SELECT * FROM habit_history WHERE user_id = ? ORDER BY date DESC`,
+        [user.id]
+      );
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: {
+          name: user.name,
+          created_at: user.created_at,
+          chai_scrolls: user.chai_scrolls
+        },
+        habits: habits.map((h) => ({
+          title: h.title,
+          description: h.description,
+          icon: h.icon,
+          color: h.color,
+          category: h.category,
+          frequency_type: h.frequency_type,
+          frequency_days: h.frequency_days,
+          target_count: h.target_count,
+          priority: h.priority,
+          created_at: h.created_at
+        })),
+        badges: badges.map((b) => ({
+          badge_key: b.badge_key,
+          earned_at: b.earned_at
+        })),
+        timeEntries: timeEntries.map((t) => ({
+          task_name: t.task_name,
+          start_time: t.start_time,
+          end_time: t.end_time,
+          duration_seconds: t.duration_seconds
+        })),
+        history: allHistory
+      };
+
+      // Copy to clipboard as the primary export method
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.default.setStringAsync(JSON.stringify(exportData, null, 2));
+      alert('Data copied to clipboard! Paste it into a file to save.');
+    } catch (e) {
+      console.error('Export failed:', e);
+      alert('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!dialog) return;
@@ -233,7 +297,14 @@ export default function SettingsScreen() {
         <SettingsSectionHeader title="Data" />
         <View style={styles.group}>
           <SettingsRow
-            emoji="🗑️"
+            emoji="📤"
+            label="Export Data"
+            sublabel={exporting ? 'Exporting…' : 'Download your data as JSON'}
+            onPress={exporting ? undefined : handleExportData}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <SettingsRow
+            emoji="️"
             label="Reset All Data"
             sublabel={resetting ? 'Resetting…' : 'Delete all habits and history'}
             danger
