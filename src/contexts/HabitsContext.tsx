@@ -9,7 +9,12 @@ import {
   ensureActiveUser,
   getUserById,
   checkAndAwardUserChaiScroll,
-  recoverHabitStreak
+  recoverHabitStreak,
+  computeAccountStreak,
+  evaluateAndAwardBadges,
+  getPreference,
+  setPreference,
+  STORAGE_KEYS
 } from '../db';
 import { isReleasedDbError } from '../db/utils';
 import type { HabitWithStreak, HabitHistory, User } from '../db/types';
@@ -32,6 +37,15 @@ interface HabitsContextValue {
   scrollsAwarded: number;
   clearScrollsAwarded: () => void;
   recoverStreak: (habitId: number) => Promise<void>;
+  /** Account-level streak: consecutive days with ≥1 habit completed. */
+  accountStreak: number;
+  accountLongestStreak: number;
+  /** Habits that were due yesterday but have no history entry. */
+  missedYesterdayHabits: HabitWithStreak[];
+  /** Whether the missed-habit dialog should be shown. */
+  showMissedDialog: boolean;
+  dismissMissedDialog: () => void;
+  markMissedHabit: (habitId: number, status: 'completed' | 'skipped') => Promise<void>;
 }
 
 const HabitsContext = createContext<HabitsContextValue | null>(null);
@@ -64,6 +78,10 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
   // Set right after toggleHabit mints new Chai Scroll(s), so the UI can
   // show a one-off celebration. Callers should clear it once shown.
   const [scrollsAwarded, setScrollsAwarded] = useState(0);
+  const [accountStreak, setAccountStreak] = useState(0);
+  const [accountLongestStreak, setAccountLongestStreak] = useState(0);
+  const [missedYesterdayHabits, setMissedYesterdayHabits] = useState<HabitWithStreak[]>([]);
+  const [showMissedDialog, setShowMissedDialog] = useState(false);
 
   // Guards against setState after unmount, and lets us tell whether a
   // "database already released" error (see db/utils.ts) happened after
@@ -103,6 +121,47 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
       );
       if (!isMounted.current) return;
       setTodayHistory(histMap);
+
+      // Compute account-level streak
+      const streak = await computeAccountStreak(db, uid);
+      if (!isMounted.current) return;
+      setAccountStreak(streak.currentStreak);
+      setAccountLongestStreak(streak.longestStreak);
+
+      // Check for missed habits from yesterday (only on first open of the day)
+      const lastOpened = await getPreference(STORAGE_KEYS.LAST_OPENED_DATE);
+      const todayStr = todayString();
+      if (lastOpened !== todayStr) {
+        // Find habits due yesterday that have no history entry
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+        const missed: HabitWithStreak[] = [];
+        for (const habit of h) {
+          // Only check habits that existed yesterday
+          if (habit.created_at.slice(0, 10) > yesterdayStr) continue;
+          // Only check habits due yesterday
+          if (!isHabitDueToday(habit, yesterday)) continue;
+          // Check if there's any history for yesterday
+          const hist = await getHistoryForDate(db, habit.id, yesterdayStr);
+          if (!hist) {
+            missed.push(habit);
+          }
+        }
+
+        if (!isMounted.current) return;
+        setMissedYesterdayHabits(missed);
+        if (missed.length > 0) {
+          setShowMissedDialog(true);
+        }
+
+        // Update last opened date
+        await setPreference(STORAGE_KEYS.LAST_OPENED_DATE, todayStr);
+      }
+
+      // Evaluate badges in the background
+      evaluateAndAwardBadges(db, uid).catch(() => {});
     } catch (err) {
       // The native db connection can momentarily be torn down/reopened
       // (Fast Refresh, or a fast navigation transition) while a query is
@@ -199,6 +258,54 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
     [db, userId, habits]
   );
 
+  /**
+   * Mark a missed habit from yesterday as completed or skipped.
+   */
+  const markMissedHabit = useCallback(
+    async (habitId: number, status: 'completed' | 'skipped') => {
+      if (!userId) return;
+      try {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+        await upsertHabitHistory(db, {
+          habit_id: habitId,
+          user_id: userId,
+          date: yesterdayStr,
+          status,
+          completion_count: status === 'completed' ? 1 : 0
+        });
+
+        // Remove from missed list
+        if (!isMounted.current) return;
+        setMissedYesterdayHabits((prev) => {
+          const next = prev.filter((h) => h.id !== habitId);
+          if (next.length === 0) setShowMissedDialog(false);
+          return next;
+        });
+
+        // Refresh streaks
+        const updated = await getHabitsWithStreaks(db, userId);
+        if (!isMounted.current) return;
+        setHabits(updated);
+
+        // Recompute account streak
+        const streak = await computeAccountStreak(db, userId);
+        if (!isMounted.current) return;
+        setAccountStreak(streak.currentStreak);
+        setAccountLongestStreak(streak.longestStreak);
+      } catch (err) {
+        if (!isReleasedDbError(err)) throw err;
+      }
+    },
+    [db, userId]
+  );
+
+  const dismissMissedDialog = useCallback(() => {
+    setShowMissedDialog(false);
+  }, []);
+
   const getHabitStatus = useCallback(
     (habitId: number): HabitStatus => {
       const h = todayHistory[habitId];
@@ -228,6 +335,11 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
   // This is the ONLY place in the app that touches the OS badge. Because
   // HabitsProvider is mounted exactly once (in the root layout), there's no
   // other instance around to race with and stomp this value.
+  //
+  // We use a stable string key derived from the actual pending state so the
+  // effect fires reliably whenever the count changes, regardless of array
+  // reference identity.
+  const badgeKey = `${userId}:${pendingCount}`;
   useEffect(() => {
     if (!userId) return;
     Notifications.setBadgeCountAsync(pendingCount).catch(() => {});
@@ -241,7 +353,7 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
       // actually resets it on those devices.
       Notifications.dismissAllNotificationsAsync().catch(() => {});
     }
-  }, [dueTodayHabits.length, pendingCount, userId]);
+  }, [badgeKey, pendingCount, userId]);
 
   const value: HabitsContextValue = {
     habits,
@@ -257,7 +369,13 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
     chaiScrolls: user?.chai_scrolls ?? 0,
     scrollsAwarded,
     clearScrollsAwarded: () => setScrollsAwarded(0),
-    recoverStreak
+    recoverStreak,
+    accountStreak,
+    accountLongestStreak,
+    missedYesterdayHabits,
+    showMissedDialog,
+    dismissMissedDialog,
+    markMissedHabit
   };
 
   return <HabitsContext.Provider value={value}>{children}</HabitsContext.Provider>;
