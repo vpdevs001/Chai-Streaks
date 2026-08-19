@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, Modal, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { router } from 'expo-router';
@@ -16,6 +17,23 @@ export default function HomeHeader({ colors, user }: Props) {
   const firstName = hasName ? user!.name.trim().split(' ')[0] : '';
   const initials = hasName ? user!.name.trim().slice(0, 1).toUpperCase() : null;
   const chaiScrolls = user?.chai_scrolls ?? 0;
+  const [showScrollInfo, setShowScrollInfo] = useState(false);
+  const scale = useRef(new Animated.Value(0.88)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  const openScrollInfo = () => {
+    setShowScrollInfo(true);
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 18, stiffness: 260 }),
+      Animated.timing(opacity, { toValue: 1, duration: 140, useNativeDriver: true })
+    ]).start();
+  };
+
+  const closeScrollInfo = () => {
+    scale.setValue(0.88);
+    opacity.setValue(0);
+    setShowScrollInfo(false);
+  };
 
   return (
     <View style={styles.header}>
@@ -24,18 +42,19 @@ export default function HomeHeader({ colors, user }: Props) {
         <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDate(new Date())}</Text>
       </View>
       <View style={styles.headerRight}>
-        <View
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.scrollBadge,
             {
               backgroundColor: colors.warning + '1A',
               borderColor: colors.warning + '55',
-              opacity: chaiScrolls === 0 ? 0.7 : 1
+              opacity: pressed ? 0.7 : chaiScrolls === 0 ? 0.7 : 1
             }
           ]}
+          onPress={openScrollInfo}
         >
           <Text style={[styles.scrollBadgeText, { color: colors.warning }]}>📜 {chaiScrolls}</Text>
-        </View>
+        </Pressable>
         <Pressable
           style={({ pressed }) => [
             styles.avatarBtn,
@@ -63,6 +82,53 @@ export default function HomeHeader({ colors, user }: Props) {
           )}
         </Pressable>
       </View>
+
+      {/* Chai Scroll Info Modal */}
+      <Modal transparent visible={showScrollInfo} animationType="none" statusBarTranslucent>
+        <Pressable
+          style={[styles.modalBackdrop, { backgroundColor: colors.overlay }]}
+          onPress={closeScrollInfo}
+        >
+          <Animated.View
+            style={[
+              styles.modalBox,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                transform: [{ scale }],
+                opacity
+              }
+            ]}
+          >
+            <View
+              style={[
+                styles.iconRing,
+                { backgroundColor: colors.warning + '18', borderColor: colors.warning + '44' }
+              ]}
+            >
+              <Text style={styles.icon}>📜</Text>
+            </View>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Chai Scrolls</Text>
+            <Text style={[styles.modalMsg, { color: colors.textSecondary }]}>
+              Chai Scrolls are a streak-recovery currency. Earn one every 7-day block with a 60%+
+              completion rate. Spend one to freeze a missed day and keep your streak alive.
+            </Text>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.modalBtn,
+                {
+                  backgroundColor: colors.primary,
+                  opacity: pressed ? 0.85 : 1
+                }
+              ]}
+              onPress={closeScrollInfo}
+            >
+              <Text style={[styles.modalBtnText, { color: '#fff' }]}>Got it</Text>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -123,5 +189,64 @@ const styles = StyleSheet.create({
   avatarInitials: {
     fontSize: TYPOGRAPHY.md,
     fontWeight: TYPOGRAPHY.heavy
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING['2xl']
+  },
+
+  modalBox: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: RADII['2xl'],
+    borderWidth: 1,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    gap: SPACING.md
+  },
+
+  iconRing: {
+    width: 56,
+    height: 56,
+    borderRadius: RADII.full,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  icon: {
+    fontSize: 24
+  },
+
+  modalTitle: {
+    fontSize: TYPOGRAPHY.lg,
+    fontWeight: TYPOGRAPHY.bold,
+    textAlign: 'center'
+  },
+
+  modalMsg: {
+    fontSize: TYPOGRAPHY.base,
+    textAlign: 'center',
+    lineHeight: 22
+  },
+
+  divider: {
+    width: '100%',
+    height: StyleSheet.hairlineWidth
+  },
+
+  modalBtn: {
+    width: '100%',
+    paddingVertical: SPACING.md,
+    borderRadius: RADII.lg,
+    alignItems: 'center'
+  },
+
+  modalBtnText: {
+    fontSize: TYPOGRAPHY.base,
+    fontWeight: TYPOGRAPHY.semibold
   }
 });

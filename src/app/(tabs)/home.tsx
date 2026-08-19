@@ -20,13 +20,15 @@ import { computeChaiScore, habitsToChaiScoreInputs } from '../../utils/chaiScore
 import HomeHeader from '../../components/home/HomeHeader';
 import TodayProgressCard from '../../components/home/TodayProgressCard';
 import StatCard from '../../components/home/StatCard';
-import HabitCard from '../../components/home/HabitCard';
 import EmptyHabits from '../../components/home/EmptyHabits';
 import MissedHabitsDialog from '../../components/home/MissedHabitsDialog';
-import TimerCard from '../../components/home/TimerCard';
+import DailyTasksCard from '../../components/home/DailyTasksCard';
+import DraggableHabitList from '../../components/home/DraggableHabitList';
+import { reorderHabits } from '../../db';
+import { useSQLiteContext } from 'expo-sqlite';
 
 export default function HomeScreen() {
-  const { colors } = useTheme();
+  const { colors } = useTheme()
   const {
     habits,
     user,
@@ -122,8 +124,8 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Time Tracker */}
-      <TimerCard />
+      {/* Daily Tasks */}
+      <DailyTasksCard />
 
       {/* Habits section header */}
       <View style={styles.sectionHeader}>
@@ -145,32 +147,55 @@ export default function HomeScreen() {
     </>
   );
 
+  const db = useSQLiteContext();
+
+  const handleReorder = useCallback(
+    async (habitIds: number[]) => {
+      try {
+        await reorderHabits(db, habitIds);
+        // Refresh to get updated sort_order from DB
+        await refresh();
+      } catch {
+        // ignore
+      }
+    },
+    [db, refresh]
+  );
+
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
-        data={habits}
-        keyExtractor={(habit) => String(habit.id)}
+        data={[{ key: 'header' }, { key: 'habits' }, { key: 'footer' }]}
+        keyExtractor={(item) => item.key}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={listHeader}
-        ListEmptyComponent={<EmptyHabits onAdd={() => router.push('/habit/create')} />}
-        renderItem={({ item: habit, index }) => (
-          <HabitCard
-            habit={habit}
-            status={getHabitStatus(habit.id)}
-            index={index}
-            onComplete={() => toggleHabit(habit.id, 'completed')}
-            onSkip={() => toggleHabit(habit.id, 'skipped')}
-            onPress={() => router.push(`/habit/${habit.id}`)}
-            canRecover={!!habit.recoverableDate && chaiScrolls > 0}
-            onRecover={() => recoverStreak(habit.id)}
-          />
-        )}
-        ItemSeparatorComponent={() => <View style={{ height: SPACING.sm }} />}
-        ListFooterComponent={<View style={{ height: 100 }} />}
+        renderItem={({ item }) => {
+          if (item.key === 'header') return <>{listHeader}</>;
+          if (item.key === 'habits') {
+            if (habits.length === 0) {
+              return <EmptyHabits onAdd={() => router.push('/habit/create')} />;
+            }
+            return (
+              <DraggableHabitList
+                habits={habits}
+                getHabitStatus={getHabitStatus}
+                onComplete={(id) => toggleHabit(id, 'completed')}
+                onSkip={(id) => toggleHabit(id, 'skipped')}
+                onPress={(id) => router.push(`/habit/${id}`)}
+                canRecover={(id) => {
+                  const habit = habits.find((h) => h.id === id);
+                  return !!habit?.recoverableDate && chaiScrolls > 0;
+                }}
+                onRecover={(id) => recoverStreak(id)}
+                onReorder={handleReorder}
+              />
+            );
+          }
+          return <View style={{ height: 100 }} />;
+        }}
       />
 
       {/* FAB */}
