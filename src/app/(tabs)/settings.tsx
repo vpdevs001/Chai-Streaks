@@ -165,6 +165,62 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleImportData = async () => {
+    if (!user) return;
+    try {
+      const Clipboard = await import('expo-clipboard');
+      const json = await Clipboard.default.getStringAsync();
+      if (!json) {
+        alert('Clipboard is empty. Copy your export data first.');
+        return;
+      }
+
+      const data = JSON.parse(json);
+      if (!data.habits || !Array.isArray(data.habits)) {
+        alert('Invalid data format. Make sure you copied the full export.');
+        return;
+      }
+
+      // Confirm before overwriting
+      const confirmed = await new Promise<boolean>((resolve) => {
+        const { Alert } = require('react-native');
+        Alert.alert(
+          'Import Data',
+          `Import ${data.habits.length} habits? This will add to your existing data.`,
+          [
+            { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
+            { text: 'Import', onPress: () => resolve(true) }
+          ]
+        );
+      });
+
+      if (!confirmed) return;
+
+      // Import habits
+      const { createHabit } = await import('../../db');
+      for (const h of data.habits) {
+        await createHabit(db, {
+          user_id: user.id,
+          title: h.title,
+          description: h.description,
+          icon: h.icon,
+          color: h.color,
+          category: h.category ?? 'general',
+          frequency_type: h.frequency_type ?? 'daily',
+          frequency_days: h.frequency_days ?? '[]',
+          target_count: h.target_count ?? 1,
+          priority: h.priority ?? 'medium'
+        });
+      }
+
+      alert(`Successfully imported ${data.habits.length} habits!`);
+      loadUser();
+    } catch (e) {
+      console.error('Import failed:', e);
+      alert('Import failed. Make sure the data is valid JSON.');
+    }
+  };
+
   const handleConfirm = async () => {
     if (!dialog) return;
     if (dialog.key === 'reset') {
@@ -183,6 +239,7 @@ export default function SettingsScreen() {
         setResetting(false);
       }
     }
+    // For non-destructive dialogs (like privacy policy), just close
     setDialog(null);
   };
 
@@ -304,7 +361,14 @@ export default function SettingsScreen() {
           />
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <SettingsRow
-            emoji="️"
+            emoji="📥"
+            label="Import Data"
+            sublabel="Restore from clipboard JSON"
+            onPress={handleImportData}
+          />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <SettingsRow
+            emoji="🗑️"
             label="Reset All Data"
             sublabel={resetting ? 'Resetting…' : 'Delete all habits and history'}
             danger
@@ -327,14 +391,19 @@ export default function SettingsScreen() {
         {/* About */}
         <SettingsSectionHeader title="About" />
         <View style={styles.group}>
-          <SettingsRow emoji="ℹ️" label="Version" sublabel="1.0.0 (MVP)" />
-
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <SettingsRow
             emoji="🔒"
             label="Privacy Policy"
             sublabel="We don't collect any data"
-            onPress={() => {}}
+            onPress={() =>
+              setDialog({
+                key: 'privacy',
+                title: 'Privacy Policy',
+                message:
+                  'Chai Streaks stores all your data locally on your device. We do not collect, transmit, or share any personal information, habit data, or usage statistics with any third parties. Your data never leaves your phone unless you explicitly export it.',
+                label: 'Got it'
+              })
+            }
           />
         </View>
 
