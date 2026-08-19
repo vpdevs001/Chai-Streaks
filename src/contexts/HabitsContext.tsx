@@ -216,6 +216,12 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
         if (!isMounted.current) return;
         setHabits(updated);
 
+        // Recompute account streak immediately so the UI updates live
+        const streak = await computeAccountStreak(db, userId);
+        if (!isMounted.current) return;
+        setAccountStreak(streak.currentStreak);
+        setAccountLongestStreak(streak.longestStreak);
+
         // Check if a new 7-day block (anchored to account creation) has just
         // elapsed with a >= 60% completion rate, earning a Chai Scroll
         const awarded = await checkAndAwardUserChaiScroll(db, userId);
