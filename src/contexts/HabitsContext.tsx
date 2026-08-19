@@ -14,7 +14,8 @@ import {
   evaluateAndAwardBadges,
   getPreference,
   setPreference,
-  STORAGE_KEYS
+  STORAGE_KEYS,
+  reorderHabits as reorderHabitsInDb
 } from '../db';
 import { isReleasedDbError } from '../db/utils';
 import type { HabitWithStreak, HabitHistory, User } from '../db/types';
@@ -28,6 +29,7 @@ interface HabitsContextValue {
   user: User | null;
   loading: boolean;
   refresh: () => Promise<void>;
+  reorderHabits: (habitIds: number[]) => Promise<void>;
   toggleHabit: (habitId: number, targetStatus?: 'completed' | 'skipped') => Promise<void>;
   getHabitStatus: (habitId: number) => HabitStatus;
   isCompleted: (habitId: number) => boolean;
@@ -96,7 +98,7 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (isMounted.current) setLoading(true);
+    if (isMounted.current && habits.length === 0) setLoading(true);
     try {
       const uid = await ensureActiveUser(db);
       if (!isMounted.current) return;
@@ -361,12 +363,42 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [badgeKey, pendingCount, userId]);
 
+  const reorderHabits = useCallback(
+    async (habitIds: number[]) => {
+      // Optimistically update habits state in memory
+      setHabits((prev) => {
+        const habitMap = new Map(prev.map((h) => [h.id, h]));
+        const reordered: HabitWithStreak[] = [];
+        for (let i = 0; i < habitIds.length; i++) {
+          const h = habitMap.get(habitIds[i]);
+          if (h) {
+            reordered.push({ ...h, sort_order: i });
+          }
+        }
+        for (const h of prev) {
+          if (!habitIds.includes(h.id)) {
+            reordered.push(h);
+          }
+        }
+        return reordered;
+      });
+
+      try {
+        await reorderHabitsInDb(db, habitIds);
+      } catch (err) {
+        if (!isReleasedDbError(err)) throw err;
+      }
+    },
+    [db]
+  );
+
   const value: HabitsContextValue = {
     habits,
     userId,
     user,
     loading,
     refresh,
+    reorderHabits,
     toggleHabit,
     getHabitStatus,
     isCompleted,

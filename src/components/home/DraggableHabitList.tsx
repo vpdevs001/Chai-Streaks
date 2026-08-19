@@ -1,17 +1,19 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useState, useCallback, useEffect } from 'react';
+import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  runOnJS
+  SharedValue
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../contexts/ThemeContext';
-import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
+import { SPACING } from '../../constants';
 import type { HabitWithStreak } from '../../db/types';
 import HabitCard from './HabitCard';
+
+const DEFAULT_ITEM_HEIGHT = 88;
+const ITEM_GAP = SPACING.sm;
 
 interface DraggableHabitListProps {
   habits: HabitWithStreak[];
@@ -22,6 +24,7 @@ interface DraggableHabitListProps {
   canRecover: (id: number) => boolean;
   onRecover: (id: number) => void;
   onReorder: (habitIds: number[]) => void;
+  onDragStateChange?: (isDragging: boolean) => void;
 }
 
 export default function DraggableHabitList({
@@ -32,38 +35,69 @@ export default function DraggableHabitList({
   onPress,
   canRecover,
   onRecover,
-  onReorder
+  onReorder,
+  onDragStateChange
 }: DraggableHabitListProps) {
-  const { colors } = useTheme();
-  const [activeId, setActiveId] = useState<number | null>(null);
-  const [order, setOrder] = useState<number[]>(habits.map((h) => h.id));
+  const [order, setOrder] = useState<number[]>(() => habits.map((h) => h.id));
+  const [itemHeight, setItemHeight] = useState(DEFAULT_ITEM_HEIGHT + ITEM_GAP);
 
-  // Sync order when habits change externally
-  useState(() => {
-    setOrder(habits.map((h) => h.id));
-  });
+  const activeId = useSharedValue<number>(-1);
+  const activeStartIndex = useSharedValue<number>(-1);
+  const hoverIndex = useSharedValue<number>(-1);
+  const draggedTranslateY = useSharedValue<number>(0);
 
-  const handleDragStart = useCallback((id: number) => {
-    setActiveId(id);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  // Sync order when habits change from external operations (e.g. create/delete)
+  useEffect(() => {
+    const habitIds = habits.map((h) => h.id);
+    setOrder((prev) => {
+      if (
+        prev.length === habitIds.length &&
+        prev.every((id, i) => id === habitIds[i])
+      ) {
+        return prev;
+      }
+      return habitIds;
+    });
+  }, [habits]);
+
+  const handleDragStart = useCallback(
+    (id: number) => {
+      onDragStateChange?.(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    },
+    [onDragStateChange]
+  );
+
+  const handleHoverChange = useCallback(() => {
+    Haptics.selectionAsync();
   }, []);
 
   const handleDragEnd = useCallback(
-    (id: number, newIndex: number) => {
-      setActiveId(null);
+    (id: number, fromIndex: number, toIndex: number) => {
+      onDragStateChange?.(false);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      const oldIndex = order.indexOf(id);
-      if (oldIndex === newIndex) return;
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
 
       const newOrder = [...order];
-      newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, id);
+      const [moved] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, moved);
       setOrder(newOrder);
       onReorder(newOrder);
     },
-    [order, onReorder]
+    [order, onReorder, onDragStateChange]
   );
+
+  const handleDragCancel = useCallback(() => {
+    onDragStateChange?.(false);
+  }, [onDragStateChange]);
+
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    const height = e.nativeEvent.layout.height;
+    if (height > 40) {
+      setItemHeight(height + ITEM_GAP);
+    }
+  }, []);
 
   const orderedHabits = order
     .map((id) => habits.find((h) => h.id === id))
@@ -76,9 +110,17 @@ export default function DraggableHabitList({
           key={habit.id}
           habit={habit}
           index={index}
-          isActive={activeId === habit.id}
+          totalItems={orderedHabits.length}
+          itemSlotHeight={itemHeight}
+          activeId={activeId}
+          activeStartIndex={activeStartIndex}
+          hoverIndex={hoverIndex}
+          draggedTranslateY={draggedTranslateY}
           onDragStart={handleDragStart}
+          onHoverChange={handleHoverChange}
           onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+          onLayoutFirstItem={index === 0 ? handleLayout : undefined}
           getHabitStatus={getHabitStatus}
           onComplete={onComplete}
           onSkip={onSkip}
@@ -94,9 +136,17 @@ export default function DraggableHabitList({
 interface DraggableHabitItemProps {
   habit: HabitWithStreak;
   index: number;
-  isActive: boolean;
+  totalItems: number;
+  itemSlotHeight: number;
+  activeId: SharedValue<number>;
+  activeStartIndex: SharedValue<number>;
+  hoverIndex: SharedValue<number>;
+  draggedTranslateY: SharedValue<number>;
   onDragStart: (id: number) => void;
-  onDragEnd: (id: number, newIndex: number) => void;
+  onHoverChange: () => void;
+  onDragEnd: (id: number, fromIndex: number, toIndex: number) => void;
+  onDragCancel: () => void;
+  onLayoutFirstItem?: (e: LayoutChangeEvent) => void;
   getHabitStatus: (id: number) => 'completed' | 'skipped' | 'unmarked';
   onComplete: (id: number) => void;
   onSkip: (id: number) => void;
@@ -108,9 +158,17 @@ interface DraggableHabitItemProps {
 function DraggableHabitItem({
   habit,
   index,
-  isActive,
+  totalItems,
+  itemSlotHeight,
+  activeId,
+  activeStartIndex,
+  hoverIndex,
+  draggedTranslateY,
   onDragStart,
+  onHoverChange,
   onDragEnd,
+  onDragCancel,
+  onLayoutFirstItem,
   getHabitStatus,
   onComplete,
   onSkip,
@@ -118,60 +176,129 @@ function DraggableHabitItem({
   canRecover,
   onRecover
 }: DraggableHabitItemProps) {
-  const { colors } = useTheme();
-  const translateY = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const zIndex = useSharedValue(0);
-
   const panGesture = Gesture.Pan()
+    .runOnJS(true)
+    .activateAfterLongPress(250)
     .onStart(() => {
-      runOnJS(onDragStart)(habit.id);
-      scale.value = withSpring(1.02);
-      zIndex.value = 100;
+      activeId.value = habit.id;
+      activeStartIndex.value = index;
+      hoverIndex.value = index;
+      draggedTranslateY.value = 0;
+      onDragStart(habit.id);
     })
     .onUpdate((event) => {
-      translateY.value = event.translationY;
+      draggedTranslateY.value = event.translationY;
+      const targetIdx = Math.min(
+        Math.max(0, Math.round(activeStartIndex.value + event.translationY / itemSlotHeight)),
+        totalItems - 1
+      );
+      if (targetIdx !== hoverIndex.value) {
+        hoverIndex.value = targetIdx;
+        onHoverChange();
+      }
     })
     .onEnd((event) => {
-      // Calculate new index based on translation
-      const itemHeight = 80; // approximate height of a habit card
-      const offset = Math.round(event.translationY / itemHeight);
-      const newIndex = Math.max(0, index + offset);
-
-      translateY.value = withSpring(0);
-      scale.value = withSpring(1);
-      zIndex.value = 0;
-
-      runOnJS(onDragEnd)(habit.id, newIndex);
+      const targetIdx = Math.min(
+        Math.max(0, Math.round(activeStartIndex.value + event.translationY / itemSlotHeight)),
+        totalItems - 1
+      );
+      const fromIdx = activeStartIndex.value;
+      activeId.value = -1;
+      activeStartIndex.value = -1;
+      hoverIndex.value = -1;
+      draggedTranslateY.value = 0;
+      onDragEnd(habit.id, fromIdx, targetIdx);
+    })
+    .onFinalize(() => {
+      if (activeId.value === habit.id) {
+        activeId.value = -1;
+        activeStartIndex.value = -1;
+        hoverIndex.value = -1;
+        draggedTranslateY.value = 0;
+        onDragCancel();
+      }
     });
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }, { scale: scale.value }],
-    zIndex: zIndex.value,
-    shadowOpacity: isActive ? 0.3 : 0,
-    shadowRadius: isActive ? 8 : 0,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: isActive ? 8 : 0
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    const isThisActive = activeId.value === habit.id;
+    if (isThisActive) {
+      return {
+        transform: [
+          { translateY: draggedTranslateY.value },
+          { scale: withSpring(1.03, { damping: 14, stiffness: 260 }) }
+        ],
+        zIndex: 999,
+        elevation: 12,
+        shadowColor: '#000',
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 6 }
+      };
+    }
+
+    if (
+      activeId.value !== -1 &&
+      activeStartIndex.value !== -1 &&
+      hoverIndex.value !== -1
+    ) {
+      const fromIdx = activeStartIndex.value;
+      const toIdx = hoverIndex.value;
+      let offset = 0;
+
+      if (toIdx > fromIdx) {
+        if (index > fromIdx && index <= toIdx) {
+          offset = -itemSlotHeight;
+        }
+      } else if (toIdx < fromIdx) {
+        if (index >= toIdx && index < fromIdx) {
+          offset = itemSlotHeight;
+        }
+      }
+
+      return {
+        transform: [
+          {
+            translateY: withSpring(offset, {
+              damping: 18,
+              stiffness: 240,
+              mass: 0.8
+            })
+          },
+          { scale: withSpring(1) }
+        ],
+        zIndex: 0,
+        elevation: 0,
+        shadowOpacity: 0
+      };
+    }
+
+    return {
+      transform: [
+        { translateY: withSpring(0, { damping: 18, stiffness: 240 }) },
+        { scale: withSpring(1) }
+      ],
+      zIndex: 0,
+      elevation: 0,
+      shadowOpacity: 0
+    };
+  });
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.itemWrapper, animatedStyle]}>
-        <View style={[styles.dragHandle, { backgroundColor: colors.border }]}>
-          <Text style={[styles.dragHandleText, { color: colors.textMuted }]}>⠿</Text>
-        </View>
-        <View style={styles.cardWrapper}>
-          <HabitCard
-            habit={habit}
-            status={getHabitStatus(habit.id)}
-            index={index}
-            onComplete={() => onComplete(habit.id)}
-            onSkip={() => onSkip(habit.id)}
-            onPress={() => onPress(habit.id)}
-            canRecover={canRecover(habit.id)}
-            onRecover={() => onRecover(habit.id)}
-          />
-        </View>
+      <Animated.View
+        style={[styles.itemWrapper, animatedStyle]}
+        onLayout={onLayoutFirstItem}
+      >
+        <HabitCard
+          habit={habit}
+          status={getHabitStatus(habit.id)}
+          index={index}
+          onComplete={() => onComplete(habit.id)}
+          onSkip={() => onSkip(habit.id)}
+          onPress={() => onPress(habit.id)}
+          canRecover={canRecover(habit.id)}
+          onRecover={() => onRecover(habit.id)}
+        />
       </Animated.View>
     </GestureDetector>
   );
@@ -182,22 +309,6 @@ const styles = StyleSheet.create({
     gap: SPACING.sm
   },
   itemWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs
-  },
-  dragHandle: {
-    width: 24,
-    height: 40,
-    borderRadius: RADII.sm,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  dragHandleText: {
-    fontSize: 14,
-    fontWeight: TYPOGRAPHY.bold
-  },
-  cardWrapper: {
-    flex: 1
+    width: '100%'
   }
 });

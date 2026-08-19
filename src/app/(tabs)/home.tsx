@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,16 +24,16 @@ import EmptyHabits from '../../components/home/EmptyHabits';
 import MissedHabitsDialog from '../../components/home/MissedHabitsDialog';
 import DailyTasksCard from '../../components/home/DailyTasksCard';
 import DraggableHabitList from '../../components/home/DraggableHabitList';
-import { reorderHabits } from '../../db';
-import { useSQLiteContext } from 'expo-sqlite';
 
 export default function HomeScreen() {
-  const { colors } = useTheme()
+  const { colors } = useTheme();
+  const [isDragging, setIsDragging] = useState(false);
   const {
     habits,
     user,
     loading,
     refresh,
+    reorderHabits,
     toggleHabit,
     getHabitStatus,
     completedCount,
@@ -147,21 +147,6 @@ export default function HomeScreen() {
     </>
   );
 
-  const db = useSQLiteContext();
-
-  const handleReorder = useCallback(
-    async (habitIds: number[]) => {
-      try {
-        await reorderHabits(db, habitIds);
-        // Refresh to get updated sort_order from DB
-        await refresh();
-      } catch {
-        // ignore
-      }
-    },
-    [db, refresh]
-  );
-
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
@@ -169,6 +154,7 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isDragging}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primary} />
         }
@@ -190,7 +176,8 @@ export default function HomeScreen() {
                   return !!habit?.recoverableDate && chaiScrolls > 0;
                 }}
                 onRecover={(id) => recoverStreak(id)}
-                onReorder={handleReorder}
+                onReorder={reorderHabits}
+                onDragStateChange={setIsDragging}
               />
             );
           }
