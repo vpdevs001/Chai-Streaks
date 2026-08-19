@@ -60,7 +60,8 @@ export default function BadgesScreen() {
     { key: 'habits', label: '🌱 Habits', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'habits') },
     { key: 'score', label: '☕ Chai Score', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'score') },
     { key: 'perfect', label: '⭐ Perfect Days', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'perfect') },
-    { key: 'scrolls', label: '📜 Chai Scrolls', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'scrolls') }
+    { key: 'scrolls', label: '📜 Chai Scrolls', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'scrolls') },
+    { key: 'time', label: '⏱️ Time Tracking', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'time') }
   ];
 
   const totalEarned = earnedBadges.length;
