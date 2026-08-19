@@ -54,6 +54,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="timer"
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon emoji="⏱️" label="Timer" focused={focused} />
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" label="Settings" focused={focused} />

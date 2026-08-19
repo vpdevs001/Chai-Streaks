@@ -40,6 +40,11 @@ export default function ProgressScreen() {
 
   // Heatmap data
   const [heatmapData, setHeatmapData] = useState<Record<string, number>>({});
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const handleDayPress = useCallback((date: string) => {
+    setSelectedDate((prev) => (prev === date ? null : date));
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -159,62 +164,6 @@ export default function ProgressScreen() {
 
         <CompletionSummary bars={bars} />
 
-        {/* Time Tracking Section */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Time Tracked</Text>
-        <View
-          style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        >
-          <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.text }]}>Hours per Day</Text>
-            <Text style={[styles.chartSub, { color: colors.textSecondary }]}>
-              {tab === '7' ? 'Past 7 days' : 'Past 30 days'}
-            </Text>
-          </View>
-          {maxTimeSeconds > 0 ? (
-            <View style={styles.timeBarsContainer}>
-              {timeDays.map((day) => {
-                const seconds = timeBars[day] ?? 0;
-                const heightPct = maxTimeSeconds > 0 ? (seconds / maxTimeSeconds) * 100 : 0;
-                const dayLabel = new Date(day + 'T00:00:00').toLocaleDateString('en-US', {
-                  weekday: 'short'
-                });
-                return (
-                  <View key={day} style={styles.timeBarCol}>
-                    <Text style={[styles.timeBarValue, { color: colors.textSecondary }]}>
-                      {seconds > 0 ? formatHours(seconds) : ''}
-                    </Text>
-                    <View
-                      style={[
-                        styles.timeBarTrack,
-                        { backgroundColor: colors.border + '55' }
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.timeBarFill,
-                          {
-                            height: `${Math.max(2, heightPct)}%`,
-                            backgroundColor: seconds > 0 ? colors.primary : 'transparent'
-                          }
-                        ]}
-                      />
-                    </View>
-                    <Text style={[styles.timeBarLabel, { color: colors.textMuted }]}>
-                      {tab === '7' ? dayLabel : day.slice(8)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : (
-            <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No time tracked yet. Start a timer from the Home tab!
-              </Text>
-            </View>
-          )}
-        </View>
-
         {/* Heatmap Section */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Activity Heatmap</Text>
         <View
@@ -223,11 +172,31 @@ export default function ProgressScreen() {
           <View style={styles.chartHeader}>
             <Text style={[styles.chartTitle, { color: colors.text }]}>Last 12 Weeks</Text>
             <Text style={[styles.chartSub, { color: colors.textSecondary }]}>
-              Daily completion rate
+              Daily completion rate · Tap a day for details
             </Text>
           </View>
-          <HeatmapCalendar data={heatmapData} weeks={12} />
+          <HeatmapCalendar data={heatmapData} weeks={12} onDayPress={handleDayPress} />
         </View>
+
+        {/* Selected Day Detail */}
+        {selectedDate && (
+          <View
+            style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <Text style={[styles.chartTitle, { color: colors.text }]}>
+              {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
+              })}
+            </Text>
+            <Text style={[styles.chartSub, { color: colors.textSecondary }]}>
+              {heatmapData[selectedDate] !== undefined
+                ? `${Math.round(heatmapData[selectedDate] * 100)}% completion rate`
+                : 'No data for this day'}
+            </Text>
+          </View>
+        )}
 
         {/* Stats grid */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>All Time Stats</Text>
