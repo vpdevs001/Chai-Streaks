@@ -13,53 +13,63 @@ export interface BadgeDefinition {
   emoji: string;
   title: string;
   description: string;
-  category: 'streak' | 'completions' | 'habits' | 'score' | 'perfect' | 'scrolls' | 'consistency';
+  category: 'streak' | 'completions' | 'habits' | 'score' | 'perfect' | 'scrolls' | 'time';
   threshold: number;
 }
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ── Streak badges (account-level consecutive days with ≥1 completion) ──
-  { key: 'streak_3', emoji: '🔥', title: 'Spark', description: '3-day streak', category: 'streak', threshold: 3 },
+  { key: 'streak_3', emoji: '✨', title: 'Spark', description: '3-day streak', category: 'streak', threshold: 3 },
   { key: 'streak_7', emoji: '🔥', title: 'Week Warrior', description: '7-day streak', category: 'streak', threshold: 7 },
-  { key: 'streak_14', emoji: '🔥', title: 'Fortnight Fighter', description: '14-day streak', category: 'streak', threshold: 14 },
-  { key: 'streak_30', emoji: '🔥', title: 'Monthly Master', description: '30-day streak', category: 'streak', threshold: 30 },
-  { key: 'streak_60', emoji: '🔥', title: 'Sixty Strong', description: '60-day streak', category: 'streak', threshold: 60 },
-  { key: 'streak_90', emoji: '🔥', title: 'Quarter Champion', description: '90-day streak', category: 'streak', threshold: 90 },
-  { key: 'streak_180', emoji: '🔥', title: 'Half Year Hero', description: '180-day streak', category: 'streak', threshold: 180 },
-  { key: 'streak_365', emoji: '🔥', title: 'Year Legend', description: '365-day streak', category: 'streak', threshold: 365 },
+  { key: 'streak_14', emoji: '⚡', title: 'Fortnight Fighter', description: '14-day streak', category: 'streak', threshold: 14 },
+  { key: 'streak_30', emoji: '💫', title: 'Monthly Master', description: '30-day streak', category: 'streak', threshold: 30 },
+  { key: 'streak_60', emoji: '🌟', title: 'Sixty Strong', description: '60-day streak', category: 'streak', threshold: 60 },
+  { key: 'streak_90', emoji: '💥', title: 'Quarter Champion', description: '90-day streak', category: 'streak', threshold: 90 },
+  { key: 'streak_180', emoji: '🏆', title: 'Half Year Hero', description: '180-day streak', category: 'streak', threshold: 180 },
+  { key: 'streak_365', emoji: '👑', title: 'Year Legend', description: '365-day streak', category: 'streak', threshold: 365 },
 
   // ── Total completion badges ──
-  { key: 'completions_10', emoji: '✅', title: 'Getting Started', description: '10 total completions', category: 'completions', threshold: 10 },
-  { key: 'completions_50', emoji: '✅', title: 'Habit Builder', description: '50 total completions', category: 'completions', threshold: 50 },
-  { key: 'completions_100', emoji: '✅', title: 'Century Club', description: '100 total completions', category: 'completions', threshold: 100 },
-  { key: 'completions_250', emoji: '✅', title: 'Consistency Pro', description: '250 total completions', category: 'completions', threshold: 250 },
-  { key: 'completions_500', emoji: '✅', title: 'Five Hundred', description: '500 total completions', category: 'completions', threshold: 500 },
-  { key: 'completions_1000', emoji: '✅', title: 'Thousand Club', description: '1000 total completions', category: 'completions', threshold: 1000 },
+  { key: 'completions_10', emoji: '🎯', title: 'Getting Started', description: '10 total completions', category: 'completions', threshold: 10 },
+  { key: 'completions_50', emoji: '🎪', title: 'Habit Builder', description: '50 total completions', category: 'completions', threshold: 50 },
+  { key: 'completions_100', emoji: '💯', title: 'Century Club', description: '100 total completions', category: 'completions', threshold: 100 },
+  { key: 'completions_250', emoji: '🚀', title: 'Consistency Pro', description: '250 total completions', category: 'completions', threshold: 250 },
+  { key: 'completions_500', emoji: '💎', title: 'Five Hundred', description: '500 total completions', category: 'completions', threshold: 500 },
+  { key: 'completions_1000', emoji: '🏅', title: 'Thousand Club', description: '1000 total completions', category: 'completions', threshold: 1000 },
 
   // ── Habit count badges ──
   { key: 'habits_1', emoji: '🌱', title: 'First Seed', description: 'Create your first habit', category: 'habits', threshold: 1 },
-  { key: 'habits_3', emoji: '🌱', title: 'Triple Threat', description: 'Track 3 habits', category: 'habits', threshold: 3 },
-  { key: 'habits_5', emoji: '🌱', title: 'High Five', description: 'Track 5 habits', category: 'habits', threshold: 5 },
-  { key: 'habits_10', emoji: '🌱', title: 'Habit Collector', description: 'Track 10 habits', category: 'habits', threshold: 10 },
-  { key: 'habits_15', emoji: '🌱', title: 'Habit Hoarder', description: 'Track 15 habits', category: 'habits', threshold: 15 },
-  { key: 'habits_20', emoji: '🌱', title: 'Habit Master', description: 'Track 20 habits', category: 'habits', threshold: 20 },
+  { key: 'habits_3', emoji: '🌿', title: 'Triple Threat', description: 'Track 3 habits', category: 'habits', threshold: 3 },
+  { key: 'habits_5', emoji: '🖐️', title: 'High Five', description: 'Track 5 habits', category: 'habits', threshold: 5 },
+  { key: 'habits_10', emoji: '🔟', title: 'Habit Collector', description: 'Track 10 habits', category: 'habits', threshold: 10 },
+  { key: 'habits_15', emoji: '📦', title: 'Habit Hoarder', description: 'Track 15 habits', category: 'habits', threshold: 15 },
+  { key: 'habits_20', emoji: '🎖️', title: 'Habit Master', description: 'Track 20 habits', category: 'habits', threshold: 20 },
 
   // ── Chai Score badges ──
-  { key: 'score_20', emoji: '☕', title: 'First Sip', description: 'Chai Score reaches 20', category: 'score', threshold: 20 },
+  { key: 'score_20', emoji: '🍵', title: 'First Sip', description: 'Chai Score reaches 20', category: 'score', threshold: 20 },
   { key: 'score_40', emoji: '☕', title: 'Chai Learner', description: 'Chai Score reaches 40', category: 'score', threshold: 40 },
-  { key: 'score_60', emoji: '☕', title: 'Chai Expert', description: 'Chai Score reaches 60', category: 'score', threshold: 60 },
-  { key: 'score_80', emoji: '☕', title: 'Master Chai', description: 'Chai Score reaches 80', category: 'score', threshold: 80 },
-  { key: 'score_100', emoji: '☕', title: 'Perfect Brew', description: 'Chai Score reaches 100', category: 'score', threshold: 100 },
+  { key: 'score_60', emoji: '🫖', title: 'Chai Expert', description: 'Chai Score reaches 60', category: 'score', threshold: 60 },
+  { key: 'score_80', emoji: '🧉', title: 'Master Chai', description: 'Chai Score reaches 80', category: 'score', threshold: 80 },
+  { key: 'score_100', emoji: '🏺', title: 'Perfect Brew', description: 'Chai Score reaches 100', category: 'score', threshold: 100 },
 
   // ── Perfect day badges (all due habits completed) ──
   { key: 'perfect_1', emoji: '⭐', title: 'Perfect Day', description: 'Complete all habits in a day', category: 'perfect', threshold: 1 },
-  { key: 'perfect_7', emoji: '⭐', title: 'Perfect Week', description: '7 perfect days', category: 'perfect', threshold: 7 },
-  { key: 'perfect_30', emoji: '⭐', title: 'Perfect Month', description: '30 perfect days', category: 'perfect', threshold: 30 },
+  { key: 'perfect_7', emoji: '🌟', title: 'Perfect Week', description: '7 perfect days', category: 'perfect', threshold: 7 },
+  { key: 'perfect_30', emoji: '💫', title: 'Perfect Month', description: '30 perfect days', category: 'perfect', threshold: 30 },
 
   // ── Chai Scroll badges ──
   { key: 'scrolls_1', emoji: '📜', title: 'First Scroll', description: 'Earn your first Chai Scroll', category: 'scrolls', threshold: 1 },
-  { key: 'scrolls_5', emoji: '📜', title: 'Scroll Collector', description: 'Earn 5 Chai Scrolls', category: 'scrolls', threshold: 5 },
-  { key: 'scrolls_10', emoji: '📜', title: 'Scroll Master', description: 'Earn 10 Chai Scrolls', category: 'scrolls', threshold: 10 },
+  { key: 'scrolls_5', emoji: '📃', title: 'Scroll Collector', description: 'Earn 5 Chai Scrolls', category: 'scrolls', threshold: 5 },
+  { key: 'scrolls_10', emoji: '📄', title: 'Scroll Master', description: 'Earn 10 Chai Scrolls', category: 'scrolls', threshold: 10 },
+
+  // ── Time tracking badges ──
+  { key: 'time_1h', emoji: '⏱️', title: 'First Hour', description: 'Track 1 hour total', category: 'time', threshold: 3600 },
+  { key: 'time_10h', emoji: '⏰', title: 'Time Apprentice', description: 'Track 10 hours total', category: 'time', threshold: 36000 },
+  { key: 'time_50h', emoji: '🕐', title: 'Time Master', description: 'Track 50 hours total', category: 'time', threshold: 180000 },
+  { key: 'time_100h', emoji: '🕰️', title: 'Time Lord', description: 'Track 100 hours total', category: 'time', threshold: 360000 },
+  { key: 'time_7d', emoji: '📅', title: 'Week Tracker', description: 'Track time 7 days in a row', category: 'time', threshold: 7 },
+  { key: 'time_30d', emoji: '🗓️', title: 'Month Tracker', description: 'Track time 30 days in a row', category: 'time', threshold: 30 },
+  { key: 'time_morning', emoji: '🌅', title: 'Early Bird', description: 'Track time before 9am', category: 'time', threshold: 1 },
+  { key: 'time_night', emoji: '🌙', title: 'Night Owl', description: 'Track time after 9pm', category: 'time', threshold: 1 },
 ];
 
 // ─── Badge evaluation ────────────────────────────────────────────────────────
@@ -163,6 +173,9 @@ export async function evaluateAndAwardBadges(
   const habits = await getHabitsWithStreaks(db, userId);
   const chaiScore = computeChaiScore(habitsToChaiScoreInputs(habits));
 
+  // Time tracking stats
+  const timeStats = await getTimeTrackingStats(db, userId);
+
   // Evaluate each badge
   const newBadges: BadgeDefinition[] = [];
 
@@ -189,6 +202,9 @@ export async function evaluateAndAwardBadges(
       case 'scrolls':
         earned = totalScrolls >= badge.threshold;
         break;
+      case 'time':
+        earned = evaluateTimeBadge(badge.key, timeStats);
+        break;
     }
 
     if (earned) {
@@ -201,6 +217,96 @@ export async function evaluateAndAwardBadges(
   }
 
   return newBadges;
+}
+
+// ─── Time tracking stats ─────────────────────────────────────────────────────
+
+interface TimeTrackingStats {
+  totalSeconds: number;
+  consecutiveDays: number;
+  hasMorningEntry: boolean;
+  hasNightEntry: boolean;
+}
+
+async function getTimeTrackingStats(
+  db: SQLiteDatabase,
+  userId: number
+): Promise<TimeTrackingStats> {
+  // Total seconds tracked
+  const totalRow = await db.getFirstAsync<{ total: number }>(
+    `SELECT COALESCE(SUM(duration_seconds), 0) AS total FROM time_entries
+     WHERE user_id = ? AND end_time IS NOT NULL`,
+    [userId]
+  );
+  const totalSeconds = totalRow?.total ?? 0;
+
+  // Consecutive days with at least one completed time entry
+  const dateRows = await db.getAllAsync<{ day: string }>(
+    `SELECT DISTINCT date(start_time) AS day FROM time_entries
+     WHERE user_id = ? AND end_time IS NOT NULL
+     ORDER BY day DESC`,
+    [userId]
+  );
+
+  let consecutiveDays = 0;
+  if (dateRows.length > 0) {
+    const today = todayDateString();
+    const cursor = new Date(today + 'T00:00:00');
+    const dateSet = new Set(dateRows.map((r) => r.day));
+
+    // If today has no entry, start from yesterday
+    if (!dateSet.has(toDateString(cursor))) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    while (dateSet.has(toDateString(cursor))) {
+      consecutiveDays++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+  }
+
+  // Morning entry (before 9am)
+  const morningRow = await db.getFirstAsync<{ count: number }>(
+    `SELECT COUNT(*) AS count FROM time_entries
+     WHERE user_id = ? AND end_time IS NOT NULL
+       AND strftime('%H', start_time) < '09'`,
+    [userId]
+  );
+  const hasMorningEntry = (morningRow?.count ?? 0) > 0;
+
+  // Night entry (after 9pm)
+  const nightRow = await db.getFirstAsync<{ count: number }>(
+    `SELECT COUNT(*) AS count FROM time_entries
+     WHERE user_id = ? AND end_time IS NOT NULL
+       AND strftime('%H', start_time) >= '21'`,
+    [userId]
+  );
+  const hasNightEntry = (nightRow?.count ?? 0) > 0;
+
+  return { totalSeconds, consecutiveDays, hasMorningEntry, hasNightEntry };
+}
+
+function evaluateTimeBadge(key: string, stats: TimeTrackingStats): boolean {
+  switch (key) {
+    case 'time_1h':
+      return stats.totalSeconds >= 3600;
+    case 'time_10h':
+      return stats.totalSeconds >= 36000;
+    case 'time_50h':
+      return stats.totalSeconds >= 180000;
+    case 'time_100h':
+      return stats.totalSeconds >= 360000;
+    case 'time_7d':
+      return stats.consecutiveDays >= 7;
+    case 'time_30d':
+      return stats.consecutiveDays >= 30;
+    case 'time_morning':
+      return stats.hasMorningEntry;
+    case 'time_night':
+      return stats.hasNightEntry;
+    default:
+      return false;
+  }
 }
 
 /**
