@@ -227,6 +227,38 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
         `ALTER TABLE habits ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;`
       );
     }
+  },
+  {
+    name: 'v9_add_daily_tasks',
+    run: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS daily_tasks (
+          id           INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id      INTEGER NOT NULL,
+          habit_id     INTEGER,
+          title        TEXT    NOT NULL,
+          is_completed INTEGER NOT NULL DEFAULT 0,
+          date         TEXT    NOT NULL,
+          created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+          updated_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+          FOREIGN KEY (user_id)  REFERENCES users  (id) ON DELETE CASCADE,
+          FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE SET NULL,
+          UNIQUE (user_id, title, date)
+        );
+      `);
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_daily_tasks_user_date
+          ON daily_tasks (user_id, date);
+      `);
+      await db.execAsync(`
+        CREATE TRIGGER IF NOT EXISTS trg_daily_tasks_updated_at
+        AFTER UPDATE ON daily_tasks
+        BEGIN
+          UPDATE daily_tasks SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+          WHERE id = NEW.id;
+        END;
+      `);
+    }
   }
 ];
 

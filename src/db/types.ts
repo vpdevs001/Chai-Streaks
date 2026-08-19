@@ -199,6 +199,24 @@ export type UpdateTimeEntryInput = Partial<
   Pick<TimeEntry, 'task_name' | 'habit_id' | 'end_time' | 'duration_seconds'>
 >;
 
+// ── Daily Tasks ─────────────────────────────
+
+export interface DailyTask {
+  id: number;
+  user_id: number;
+  habit_id: number | null;
+  title: string;
+  is_completed: number; // 0 = false, 1 = true
+  date: string; // YYYY-MM-DD
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateDailyTaskInput = Pick<DailyTask, 'user_id' | 'title' | 'date'> &
+  Partial<Pick<DailyTask, 'habit_id' | 'is_completed'>>;
+
+export type UpdateDailyTaskInput = Partial<Pick<DailyTask, 'title' | 'is_completed' | 'habit_id'>>;
+
 // ── AsyncStorage keys (re-exported for convenience) ──
 
 export const STORAGE_KEYS = {
