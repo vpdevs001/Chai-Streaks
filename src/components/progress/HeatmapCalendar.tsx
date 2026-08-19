@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
 import { toDateString } from '../../db/utils';
@@ -9,13 +9,15 @@ interface HeatmapCalendarProps {
   data: Record<string, number>;
   /** Number of weeks to show (default 12). */
   weeks?: number;
+  /** Called when a day cell is tapped. */
+  onDayPress?: (date: string) => void;
 }
 
 const DAY_SIZE = 14;
 const DAY_GAP = 3;
 const LABEL_WIDTH = 28;
 
-export default function HeatmapCalendar({ data, weeks = 12 }: HeatmapCalendarProps) {
+export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: HeatmapCalendarProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
 
@@ -117,16 +119,18 @@ export default function HeatmapCalendar({ data, weeks = 12 }: HeatmapCalendarPro
           {grid.map((week, wi) => (
             <View key={wi} style={[styles.weekCol, { marginRight: DAY_GAP }]}>
               {week.map((day, di) => (
-                <View
+                <Pressable
                   key={di}
-                  style={[
+                  onPress={() => onDayPress?.(day.date)}
+                  style={({ pressed }) => [
                     styles.dayCell,
                     {
                       width: DAY_SIZE,
                       height: DAY_SIZE,
                       borderRadius: 3,
                       backgroundColor: getColor(day.rate),
-                      marginBottom: DAY_GAP
+                      marginBottom: DAY_GAP,
+                      opacity: pressed ? 0.7 : 1
                     }
                   ]}
                 />
