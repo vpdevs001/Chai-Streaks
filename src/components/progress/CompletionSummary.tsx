@@ -39,10 +39,12 @@ export default function CompletionSummary({ bars }: { bars: DayBar[] }) {
   const totalPossible = bars.reduce((s, b) => s + b.total, 0);
   const totalDone = bars.reduce((s, b) => s + b.count, 0);
   const totalSkipped = bars.reduce((s, b) => s + b.skipped, 0);
-  const totalMissed = Math.max(0, totalPossible - totalDone - totalSkipped);
+  const totalFrozen = bars.reduce((s, b) => s + b.frozen, 0);
+  const totalMissed = Math.max(0, totalPossible - totalDone - totalSkipped - totalFrozen);
 
   const completionRate = totalPossible > 0 ? totalDone / totalPossible : 0;
   const failureRate = totalPossible > 0 ? totalSkipped / totalPossible : 0;
+  const frozenRate = totalPossible > 0 ? totalFrozen / totalPossible : 0;
   const missedRate = totalPossible > 0 ? totalMissed / totalPossible : 0;
 
   return (
@@ -66,6 +68,13 @@ export default function CompletionSummary({ bars }: { bars: DayBar[] }) {
       />
 
       <RateBar
+        label="Frozen Rate"
+        rate={frozenRate}
+        fillColor={colors.warning}
+        pctColor={colors.warning}
+      />
+
+      <RateBar
         label="Missed Rate"
         rate={missedRate}
         fillColor={colors.textMuted}
@@ -84,6 +93,12 @@ export default function CompletionSummary({ bars }: { bars: DayBar[] }) {
           <View style={[styles.legendDot, { backgroundColor: colors.danger }]} />
           <Text style={[styles.legendText, { color: colors.textSecondary }]}>
             Skipped: {totalSkipped}
+          </Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: colors.warning }]} />
+          <Text style={[styles.legendText, { color: colors.textSecondary }]}>
+            Frozen: {totalFrozen}
           </Text>
         </View>
         <View style={styles.legendItem}>
