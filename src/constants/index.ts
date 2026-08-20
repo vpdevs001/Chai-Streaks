@@ -18,6 +18,15 @@ export const RADII = {
   full: 999
 } as const;
 
+export const FONTS = {
+  sketch: 'Caveat_700Bold',
+  sketchSemiBold: 'Caveat_600SemiBold',
+  sketchRegular: 'Caveat_400Regular',
+  handwritten: 'PatrickHand_400Regular',
+  wavy: 'Kalam_700Bold',
+  wavyRegular: 'Kalam_400Regular'
+} as const;
+
 export const TYPOGRAPHY = {
   xs: 11,
   sm: 12,

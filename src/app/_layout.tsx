@@ -13,6 +13,17 @@ import { configureNotificationHandler, ensureAndroidChannel } from '../lib/notif
 import { resolveNotificationRoute } from '../lib/notifications/deepLink';
 import { reconcileHabitReminders } from '../lib/notifications/schedule';
 
+import { DrawerProvider } from '../contexts/DrawerContext';
+import AppDrawer from '../components/navigation/AppDrawer';
+import {
+  useFonts,
+  Caveat_400Regular,
+  Caveat_600SemiBold,
+  Caveat_700Bold
+} from '@expo-google-fonts/caveat';
+import { Kalam_400Regular, Kalam_700Bold } from '@expo-google-fonts/kalam';
+import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand';
+
 LogBox.ignoreLogs([
   'createAnimatedPropAdapter',
   '`createAnimatedPropAdapter` is no longer necessary in Reanimated 4'
@@ -22,6 +33,15 @@ function AppGate() {
   const { colors, scheme } = useTheme();
   const db = useSQLiteContext();
   const [checking, setChecking] = useState(true);
+
+  const [fontsLoaded] = useFonts({
+    Caveat_400Regular,
+    Caveat_600SemiBold,
+    Caveat_700Bold,
+    Kalam_400Regular,
+    Kalam_700Bold,
+    PatrickHand_400Regular
+  });
 
   useEffect(() => {
     let isActive = true;
@@ -86,7 +106,7 @@ function AppGate() {
     };
   }, []);
 
-  if (checking) {
+  if (checking || !fontsLoaded) {
     return (
       <View
         style={{
@@ -116,6 +136,7 @@ function AppGate() {
           options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
         />
       </Stack>
+      <AppDrawer />
     </>
   );
 }
@@ -127,7 +148,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <HabitsProvider>
             <TimerProvider>
-              <AppGate />
+              <DrawerProvider>
+                <AppGate />
+              </DrawerProvider>
             </TimerProvider>
           </HabitsProvider>
         </ThemeProvider>

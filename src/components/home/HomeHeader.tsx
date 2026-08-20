@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, Animated } from 'react-native';
 import { Image } from 'expo-image';
-import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
+import * as Haptics from 'expo-haptics';
+import { SPACING, RADII, TYPOGRAPHY, FONTS } from '../../constants';
 import { router } from 'expo-router';
+import { useDrawer } from '../../contexts/DrawerContext';
 import type { ThemeColors } from '../../theme';
 import type { User } from '../../db/types';
 import { getGreeting, formatDate } from '../../utils/dateHelpers';
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export default function HomeHeader({ colors, user }: Props) {
+  const { openDrawer } = useDrawer();
   const hasName = !!user?.name && user.name.trim().length > 0 && user.name.trim() !== 'You';
   const firstName = hasName ? user!.name.trim().split(' ')[0] : '';
   const initials = hasName ? user!.name.trim().slice(0, 1).toUpperCase() : null;
@@ -20,6 +23,11 @@ export default function HomeHeader({ colors, user }: Props) {
   const [showScrollInfo, setShowScrollInfo] = useState(false);
   const scale = useRef(new Animated.Value(0.88)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+
+  const handleOpenDrawer = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    openDrawer();
+  };
 
   const openScrollInfo = () => {
     setShowScrollInfo(true);
@@ -37,9 +45,24 @@ export default function HomeHeader({ colors, user }: Props) {
 
   return (
     <View style={styles.header}>
-      <View>
-        <Text style={[styles.greeting, { color: colors.text }]}>{getGreeting(firstName)}</Text>
-        <Text style={[styles.date, { color: colors.textSecondary }]}>{formatDate(new Date())}</Text>
+      <View style={styles.headerLeft}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.menuBtn,
+            { backgroundColor: colors.card, borderColor: colors.border },
+            pressed && { opacity: 0.7 }
+          ]}
+          onPress={handleOpenDrawer}
+          hitSlop={8}
+        >
+          <Text style={[styles.menuIcon, { color: colors.text }]}>☰</Text>
+        </Pressable>
+        <View>
+          <Text style={[styles.greeting, { color: colors.text }]}>{getGreeting(firstName)}</Text>
+          <Text style={[styles.date, { color: colors.textSecondary }]}>
+            {formatDate(new Date())}
+          </Text>
+        </View>
       </View>
       <View style={styles.headerRight}>
         <Pressable
@@ -137,20 +160,41 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: SPACING.lg
   },
 
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm
+  },
+
+  menuBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: RADII.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  menuIcon: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    lineHeight: 20
+  },
+
   greeting: {
-    fontSize: TYPOGRAPHY.xl,
-    fontWeight: TYPOGRAPHY.heavy,
-    lineHeight: 28
+    fontFamily: FONTS.wavy,
+    fontSize: 24,
+    letterSpacing: 0.2
   },
 
   date: {
-    fontSize: TYPOGRAPHY.sm,
-    fontWeight: TYPOGRAPHY.medium,
-    marginTop: 2
+    fontFamily: FONTS.handwritten,
+    fontSize: 14,
+    marginTop: 1
   },
 
   headerRight: {

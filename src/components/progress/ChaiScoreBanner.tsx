@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
+import { SPACING, RADII, TYPOGRAPHY, FONTS } from '../../constants';
 import type { ThemeColors } from '../../theme';
 import { chaiScoreLabel, chaiScoreEmoji } from '../../utils/chaiScore';
 
@@ -45,17 +45,18 @@ const styles = StyleSheet.create({
   },
 
   score: {
-    fontSize: TYPOGRAPHY['2xl'],
-    fontWeight: TYPOGRAPHY.heavy
+    fontFamily: FONTS.sketch,
+    fontSize: 28
   },
 
   label: {
-    fontSize: TYPOGRAPHY.base,
-    fontWeight: TYPOGRAPHY.semibold
+    fontFamily: FONTS.wavy,
+    fontSize: 16
   },
 
   sub: {
-    fontSize: TYPOGRAPHY.xs
+    fontFamily: FONTS.handwritten,
+    fontSize: 13
   },
 
   track: {
