@@ -39,6 +39,7 @@ import ProfileCard from '../../components/settings/ProfileCard';
 import { useNotifications } from '../../hooks/useNotifications';
 import { TimePicker } from '../../components/shared/TimePicker';
 import { reconcileHabitReminders } from '../../lib/notifications/schedule';
+import ScreenHeader from '../../components/progress/ScreenHeader';
 
 export default function SettingsScreen() {
   const { colors, preference } = useTheme();
@@ -247,10 +248,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
-          <Text style={[styles.sub, { color: colors.textSecondary }]}>ChaiStreaks</Text>
-        </View>
+        <ScreenHeader title="Settings" subtitle="Preferences & app management" colors={colors} />
 
         {/* ── Profile section ────────────────────────────────────────────── */}
         <SettingsSectionHeader title="Profile" />

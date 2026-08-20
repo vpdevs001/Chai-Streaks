@@ -42,15 +42,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="progress"
+        name="tasks"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" label="Progress" focused={focused} />
-        }}
-      />
-      <Tabs.Screen
-        name="badges"
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏅" label="Badges" focused={focused} />
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" label="Tasks" focused={focused} />
         }}
       />
       <Tabs.Screen
@@ -60,9 +54,21 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="progress"
+        options={{
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" label="Progress" focused={focused} />
+        }}
+      />
+      <Tabs.Screen
+        name="badges"
+        options={{
+          href: null
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" label="Settings" focused={focused} />
+          href: null
         }}
       />
     </Tabs>
