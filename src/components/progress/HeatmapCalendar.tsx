@@ -1,7 +1,14 @@
-import { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  useWindowDimensions,
+  LayoutChangeEvent
+} from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
+import { SPACING, TYPOGRAPHY } from '../../constants';
 import { toDateString } from '../../db/utils';
 
 interface HeatmapCalendarProps {
@@ -13,22 +20,37 @@ interface HeatmapCalendarProps {
   onDayPress?: (date: string) => void;
 }
 
-const DAY_SIZE = 14;
 const DAY_GAP = 3;
-const LABEL_WIDTH = 28;
+const LABEL_WIDTH = 22;
 
 export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: HeatmapCalendarProps) {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  // Available width within the card
+  const effectiveWidth =
+    containerWidth > 0 ? containerWidth : windowWidth - SPACING.base * 2 - SPACING.lg * 2;
+  const daySize = Math.max(
+    12,
+    Math.floor((effectiveWidth - LABEL_WIDTH - (weeks - 1) * DAY_GAP) / weeks)
+  );
+
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0 && Math.abs(w - containerWidth) > 2) {
+      setContainerWidth(w);
+    }
+  };
 
   const { grid, monthLabels } = useMemo(() => {
     const today = new Date();
     const todayStr = toDateString(today);
 
-    // Find the most recent Sunday (start of the current week column)
+    // Find the most recent Saturday (end of current week column)
     const endDate = new Date(today);
     const dayOfWeek = endDate.getDay(); // 0 = Sunday
-    endDate.setDate(endDate.getDate() + (6 - dayOfWeek)); // go to Saturday of this week
+    endDate.setDate(endDate.getDate() + (6 - dayOfWeek));
 
     const totalDays = weeks * 7;
     const startDate = new Date(endDate);
@@ -36,8 +58,9 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
 
     // Build grid: weeks × 7 days
     const grid: { date: string; rate: number | null }[][] = [];
-    const monthLabels: { label: string; colIndex: number }[] = [];
+    const monthLabelsList: { label: string; colIndex: number; leftPx: number }[] = [];
     let lastMonth = -1;
+    let lastLabelCol = -10;
 
     const cursor = new Date(startDate);
     for (let w = 0; w < weeks; w++) {
@@ -49,14 +72,19 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
 
         week.push({ date: dateStr, rate });
 
-        // Track month labels
+        // Track month labels (only on the first day of each week or month transition)
         const month = cursor.getMonth();
-        if (d === 0 && month !== lastMonth) {
-          monthLabels.push({
-            label: cursor.toLocaleDateString('en-US', { month: 'short' }),
-            colIndex: w
-          });
-          lastMonth = month;
+        if (d === 0) {
+          if (month !== lastMonth && w - lastLabelCol >= 3) {
+            const leftPx = LABEL_WIDTH + w * (daySize + DAY_GAP);
+            monthLabelsList.push({
+              label: cursor.toLocaleDateString('en-US', { month: 'short' }),
+              colIndex: w,
+              leftPx
+            });
+            lastLabelCol = w;
+            lastMonth = month;
+          }
         }
 
         cursor.setDate(cursor.getDate() + 1);
@@ -64,12 +92,12 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
       grid.push(week);
     }
 
-    return { grid, monthLabels };
-  }, [data, weeks]);
+    return { grid, monthLabels: monthLabelsList };
+  }, [data, weeks, daySize]);
 
   const getColor = (rate: number | null): string => {
-    if (rate === null) return colors.border + '33'; // future or no data
-    if (rate === 0) return colors.border + '55'; // no completions
+    if (rate === null) return colors.border + '22'; // future or no data
+    if (rate === 0) return colors.border + '44'; // no completions
     if (rate < 0.25) return colors.primary + '33';
     if (rate < 0.5) return colors.primary + '66';
     if (rate < 0.75) return colors.primary + '99';
@@ -79,17 +107,17 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
   const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   return (
-    <View style={styles.container}>
-      {/* Month labels */}
-      <View style={[styles.monthRow, { paddingLeft: LABEL_WIDTH }]}>
+    <View style={styles.container} onLayout={handleLayout}>
+      {/* Month labels row with absolute positioning to prevent squashing */}
+      <View style={styles.monthRow}>
         {monthLabels.map((m, i) => (
           <Text
-            key={i}
+            key={`${m.label}_${i}`}
             style={[
               styles.monthLabel,
               {
                 color: colors.textMuted,
-                left: m.colIndex * (DAY_SIZE + DAY_GAP)
+                left: m.leftPx
               }
             ]}
           >
@@ -99,22 +127,38 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
       </View>
 
       <View style={styles.gridRow}>
-        {/* Day labels */}
+        {/* Day labels (S, M, T, W, T, F, S) */}
         <View style={[styles.dayLabels, { width: LABEL_WIDTH }]}>
           {dayLabels.map((label, i) => (
             <Text
               key={i}
-              style={[styles.dayLabel, { color: colors.textMuted, height: DAY_SIZE + DAY_GAP }]}
+              style={[
+                styles.dayLabel,
+                {
+                  color: colors.textMuted,
+                  height: daySize + DAY_GAP,
+                  fontSize: Math.min(10, daySize - 2)
+                }
+              ]}
             >
               {i % 2 === 1 ? label : ''}
             </Text>
           ))}
         </View>
 
-        {/* Grid */}
+        {/* Full-width Grid */}
         <View style={styles.grid}>
           {grid.map((week, wi) => (
-            <View key={wi} style={[styles.weekCol, { marginRight: DAY_GAP }]}>
+            <View
+              key={wi}
+              style={[
+                styles.weekCol,
+                {
+                  width: daySize,
+                  marginRight: wi < weeks - 1 ? DAY_GAP : 0
+                }
+              ]}
+            >
               {week.map((day, di) => (
                 <Pressable
                   key={di}
@@ -122,9 +166,9 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
                   style={({ pressed }) => [
                     styles.dayCell,
                     {
-                      width: DAY_SIZE,
-                      height: DAY_SIZE,
-                      borderRadius: 3,
+                      width: daySize,
+                      height: daySize,
+                      borderRadius: Math.max(2, Math.floor(daySize * 0.22)),
                       backgroundColor: getColor(day.rate),
                       marginBottom: DAY_GAP,
                       opacity: pressed ? 0.7 : 1
@@ -162,31 +206,36 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     gap: SPACING.xs
   },
   monthRow: {
     height: 18,
-    position: 'relative'
+    position: 'relative',
+    width: '100%'
   },
   monthLabel: {
     fontSize: 10,
-    fontWeight: TYPOGRAPHY.medium,
+    fontWeight: TYPOGRAPHY.bold,
     position: 'absolute'
   },
   gridRow: {
-    flexDirection: 'row'
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%'
   },
   dayLabels: {
     justifyContent: 'flex-start'
   },
   dayLabel: {
-    fontSize: 9,
     fontWeight: TYPOGRAPHY.medium,
-    textAlign: 'center',
-    textAlignVertical: 'center'
+    textAlign: 'left',
+    lineHeight: 14
   },
   grid: {
-    flexDirection: 'row'
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start'
   },
   weekCol: {
     flexDirection: 'column'

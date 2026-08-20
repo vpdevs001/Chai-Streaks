@@ -69,13 +69,22 @@ export default function CalendarHeatmap({ habitColor, history }: Props) {
     grid.push(week);
   }
 
-  // Determine month label for each week (show label when month changes or first week)
+  // Determine month label for each week (ensure at least 3 weeks spacing so labels don't collide)
+  let lastLabeledMonth = -1;
+  let lastLabeledWeek = -10;
   const monthLabels: (string | null)[] = grid.map((week, wIdx) => {
     const firstDayOfWeek = week[0];
     const month = firstDayOfWeek.getMonth();
-    if (wIdx === 0) return MONTHS_SHORT[month];
-    const prevWeekFirstDay = grid[wIdx - 1][0];
-    if (prevWeekFirstDay.getMonth() !== month) return MONTHS_SHORT[month];
+    if (wIdx === 0) {
+      lastLabeledMonth = month;
+      lastLabeledWeek = wIdx;
+      return MONTHS_SHORT[month];
+    }
+    if (month !== lastLabeledMonth && wIdx - lastLabeledWeek >= 3) {
+      lastLabeledMonth = month;
+      lastLabeledWeek = wIdx;
+      return MONTHS_SHORT[month];
+    }
     return null;
   });
 
