@@ -45,6 +45,7 @@ export default function HomeScreen() {
     accountStreak,
     accountLongestStreak,
     missedYesterdayHabits,
+    markedMissedIds,
     showMissedDialog,
     dismissMissedDialog,
     markMissedHabit
@@ -206,6 +207,7 @@ export default function HomeScreen() {
       <MissedHabitsDialog
         visible={showMissedDialog}
         habits={missedYesterdayHabits}
+        markedIds={markedMissedIds}
         onMark={markMissedHabit}
         onDismiss={dismissMissedDialog}
       />

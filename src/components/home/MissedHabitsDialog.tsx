@@ -7,11 +7,14 @@ import type { HabitWithStreak } from '../../db/types';
 export default function MissedHabitsDialog({
   visible,
   habits,
+  markedIds,
   onMark,
   onDismiss
 }: {
   visible: boolean;
   habits: HabitWithStreak[];
+  /** IDs of habits already marked in this session — shown greyed-out. */
+  markedIds: Set<number>;
   onMark: (habitId: number, status: 'completed' | 'skipped') => void;
   onDismiss: () => void;
 }) {
@@ -39,95 +42,125 @@ export default function MissedHabitsDialog({
     day: 'numeric'
   });
 
+  const unmarkedCount = habits.filter((h) => !markedIds.has(h.id)).length;
+
   return (
     <Modal transparent visible={visible} animationType="none" statusBarTranslucent>
       <Pressable style={[styles.backdrop, { backgroundColor: colors.overlay }]} onPress={onDismiss}>
-        <Animated.View
-          style={[
-            styles.box,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              transform: [{ scale }],
-              opacity
-            }
-          ]}
-        >
-          <View
+        {/* Inner Pressable stops taps inside the dialog box from propagating
+            to the backdrop and accidentally dismissing the modal. */}
+        <Pressable onPress={(e) => e.stopPropagation()}>
+          <Animated.View
             style={[
-              styles.iconRing,
-              { backgroundColor: colors.warning + '18', borderColor: colors.warning + '44' }
-            ]}
-          >
-            <Text style={styles.icon}>📋</Text>
-          </View>
-          <Text style={[styles.title, { color: colors.text }]}>Missed Habits</Text>
-          <Text style={[styles.msg, { color: colors.textSecondary }]}>
-            You have {habits.length} unmarked habit{habits.length !== 1 ? 's' : ''} from{' '}
-            {yesterdayLabel}. How did it go?
-          </Text>
-
-          <ScrollView style={styles.habitList} showsVerticalScrollIndicator={false}>
-            {habits.map((habit) => (
-              <View
-                key={habit.id}
-                style={[styles.habitRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-              >
-                <View style={styles.habitInfo}>
-                  <Text style={styles.habitEmoji}>{habit.icon ?? '✨'}</Text>
-                  <Text style={[styles.habitName, { color: colors.text }]} numberOfLines={1}>
-                    {habit.title}
-                  </Text>
-                </View>
-                <View style={styles.habitActions}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.actionBtn,
-                      {
-                        backgroundColor: colors.success + '22',
-                        borderColor: colors.success + '44',
-                        opacity: pressed ? 0.7 : 1
-                      }
-                    ]}
-                    onPress={() => onMark(habit.id, 'completed')}
-                  >
-                    <Text style={[styles.actionText, { color: colors.success }]}>✓ Done</Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.actionBtn,
-                      {
-                        backgroundColor: colors.danger + '22',
-                        borderColor: colors.danger + '44',
-                        opacity: pressed ? 0.7 : 1
-                      }
-                    ]}
-                    onPress={() => onMark(habit.id, 'skipped')}
-                  >
-                    <Text style={[styles.actionText, { color: colors.danger }]}>✕ Failed</Text>
-                  </Pressable>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <Pressable
-            style={({ pressed }) => [
-              styles.dismissBtn,
+              styles.box,
               {
-                backgroundColor: colors.inputBg,
+                backgroundColor: colors.surface,
                 borderColor: colors.border,
-                opacity: pressed ? 0.75 : 1
+                transform: [{ scale }],
+                opacity
               }
             ]}
-            onPress={onDismiss}
           >
-            <Text style={[styles.dismissText, { color: colors.textSecondary }]}>
-              Dismiss (leave unmarked)
+            <View
+              style={[
+                styles.iconRing,
+                { backgroundColor: colors.warning + '18', borderColor: colors.warning + '44' }
+              ]}
+            >
+              <Text style={styles.icon}>📋</Text>
+            </View>
+            <Text style={[styles.title, { color: colors.text }]}>Missed Habits</Text>
+            <Text style={[styles.msg, { color: colors.textSecondary }]}>
+              {unmarkedCount > 0
+                ? `You have ${unmarkedCount} unmarked habit${unmarkedCount !== 1 ? 's' : ''} from ${yesterdayLabel}. How did it go?`
+                : `All done! Great job catching up on ${yesterdayLabel}.`}
             </Text>
-          </Pressable>
-        </Animated.View>
+
+            <ScrollView style={styles.habitList} showsVerticalScrollIndicator={false}>
+              {habits.map((habit) => {
+                const isMarked = markedIds.has(habit.id);
+                return (
+                  <View
+                    key={habit.id}
+                    style={[
+                      styles.habitRow,
+                      {
+                        backgroundColor: isMarked ? colors.card + '88' : colors.card,
+                        borderColor: colors.border,
+                        opacity: isMarked ? 0.55 : 1
+                      }
+                    ]}
+                  >
+                    <View style={styles.habitInfo}>
+                      <Text style={styles.habitEmoji}>{habit.icon ?? '✨'}</Text>
+                      <Text
+                        style={[
+                          styles.habitName,
+                          { color: colors.text },
+                          isMarked && styles.habitNameDone
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {habit.title}
+                      </Text>
+                    </View>
+                    {isMarked ? (
+                      <View style={[styles.doneBadge, { backgroundColor: colors.success + '22' }]}>
+                        <Text style={[styles.doneBadgeText, { color: colors.success }]}>✓</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.habitActions}>
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.actionBtn,
+                            {
+                              backgroundColor: colors.success + '22',
+                              borderColor: colors.success + '44',
+                              opacity: pressed ? 0.7 : 1
+                            }
+                          ]}
+                          onPress={() => onMark(habit.id, 'completed')}
+                        >
+                          <Text style={[styles.actionText, { color: colors.success }]}>✓ Done</Text>
+                        </Pressable>
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.actionBtn,
+                            {
+                              backgroundColor: colors.danger + '22',
+                              borderColor: colors.danger + '44',
+                              opacity: pressed ? 0.7 : 1
+                            }
+                          ]}
+                          onPress={() => onMark(habit.id, 'skipped')}
+                        >
+                          <Text style={[styles.actionText, { color: colors.danger }]}>✕ Failed</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </ScrollView>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.dismissBtn,
+                {
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.75 : 1
+                }
+              ]}
+              onPress={onDismiss}
+            >
+              <Text style={[styles.dismissText, { color: colors.textSecondary }]}>
+                Dismiss (leave unmarked)
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
       </Pressable>
     </Modal>
   );
@@ -198,6 +231,9 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.semibold,
     flex: 1
   },
+  habitNameDone: {
+    textDecorationLine: 'line-through'
+  },
   habitActions: {
     flexDirection: 'row',
     gap: SPACING.xs
@@ -210,6 +246,17 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: TYPOGRAPHY.xs,
+    fontWeight: TYPOGRAPHY.bold
+  },
+  doneBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: RADII.full,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  doneBadgeText: {
+    fontSize: 16,
     fontWeight: TYPOGRAPHY.bold
   },
   divider: {

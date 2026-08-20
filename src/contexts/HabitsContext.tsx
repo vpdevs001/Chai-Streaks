@@ -44,6 +44,8 @@ interface HabitsContextValue {
   accountLongestStreak: number;
   /** Habits that were due yesterday but have no history entry. */
   missedYesterdayHabits: HabitWithStreak[];
+  /** IDs of missed habits already marked by the user in this session. */
+  markedMissedIds: Set<number>;
   /** Whether the missed-habit dialog should be shown. */
   showMissedDialog: boolean;
   dismissMissedDialog: () => void;
@@ -83,6 +85,7 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
   const [accountStreak, setAccountStreak] = useState(0);
   const [accountLongestStreak, setAccountLongestStreak] = useState(0);
   const [missedYesterdayHabits, setMissedYesterdayHabits] = useState<HabitWithStreak[]>([]);
+  const [markedMissedIds, setMarkedMissedIds] = useState<Set<number>>(new Set());
   const [showMissedDialog, setShowMissedDialog] = useState(false);
 
   // Guards against setState after unmount, and lets us tell whether a
@@ -110,9 +113,11 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
 
       const h = await getHabitsWithStreaks(db, uid);
       if (!isMounted.current) return;
-      setHabits(h);
 
-      // load today's history for each habit
+      // Load today's history for each habit BEFORE setting either habits or
+      // todayHistory state. This prevents an intermediate render where habits
+      // is fresh but todayHistory is stale, which caused the badge effect to
+      // fire with a wrong pendingCount (e.g. 1 when it should be 0).
       const today = todayString();
       const histMap: Record<number, HabitHistory> = {};
       await Promise.all(
@@ -122,6 +127,10 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
         })
       );
       if (!isMounted.current) return;
+
+      // Batch both updates so they trigger a single render with consistent
+      // data — the badge effect now always sees matching habits + todayHistory.
+      setHabits(h);
       setTodayHistory(histMap);
 
       // Compute account-level streak
@@ -154,6 +163,7 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
 
         if (!isMounted.current) return;
         setMissedYesterdayHabits(missed);
+        setMarkedMissedIds(new Set());
         if (missed.length > 0) {
           setShowMissedDialog(true);
         }
@@ -285,11 +295,13 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
           completion_count: status === 'completed' ? 1 : 0
         });
 
-        // Remove from missed list
+        // Mark as handled in the UI — keep the habit in the list (so the
+        // layout doesn't shift and cause mis-taps during rapid marking)
+        // but track it as "done" via markedMissedIds.
         if (!isMounted.current) return;
-        setMissedYesterdayHabits((prev) => {
-          const next = prev.filter((h) => h.id !== habitId);
-          if (next.length === 0) setShowMissedDialog(false);
+        setMarkedMissedIds((prev) => {
+          const next = new Set(prev);
+          next.add(habitId);
           return next;
         });
 
@@ -392,6 +404,19 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
     [db]
   );
 
+  // Auto-close the missed dialog once every missed habit has been marked.
+  // This runs as a derived effect rather than inside markMissedHabit so it
+  // reacts to the final committed state (no stale-closure issues).
+  useEffect(() => {
+    if (
+      showMissedDialog &&
+      missedYesterdayHabits.length > 0 &&
+      missedYesterdayHabits.every((h) => markedMissedIds.has(h.id))
+    ) {
+      setShowMissedDialog(false);
+    }
+  }, [showMissedDialog, missedYesterdayHabits, markedMissedIds]);
+
   const value: HabitsContextValue = {
     habits,
     userId,
@@ -411,6 +436,7 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
     accountStreak,
     accountLongestStreak,
     missedYesterdayHabits,
+    markedMissedIds,
     showMissedDialog,
     dismissMissedDialog,
     markMissedHabit
