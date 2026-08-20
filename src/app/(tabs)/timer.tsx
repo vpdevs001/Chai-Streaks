@@ -25,6 +25,7 @@ import { getLast7Days, getLast30Days, todayString } from '../../utils/dateHelper
 import { toDateString } from '../../db/utils';
 import ScreenHeader from '../../components/progress/ScreenHeader';
 import HeatmapCalendar from '../../components/progress/HeatmapCalendar';
+import TimeBarChart from '../../components/progress/TimeBarChart';
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -260,55 +261,20 @@ export default function TimerScreen() {
             {formatHoursMinutes(totalSeconds)} total
           </Text>
 
-          {maxTimeSeconds > 0 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.timeBarsScroll}
-            >
-              {timeDays.map((day) => {
-                const seconds = timeBars[day] ?? 0;
-                const heightPct = maxTimeSeconds > 0 ? (seconds / maxTimeSeconds) * 100 : 0;
-                const dayLabel = new Date(day + 'T00:00:00').toLocaleDateString('en-US', {
-                  weekday: 'short'
-                });
-                const isSelected = selectedDate === day;
-                return (
-                  <Pressable
-                    key={day}
-                    style={styles.timeBarCol}
-                    onPress={() => handleDatePress(day)}
-                  >
-                    <Text style={[styles.timeBarValue, { color: colors.textSecondary }]}>
-                      {seconds > 0 ? formatHoursMinutes(seconds) : ''}
-                    </Text>
-                    <View
-                      style={[
-                        styles.timeBarTrack,
-                        {
-                          backgroundColor: colors.border + '55',
-                          borderWidth: isSelected ? 1.5 : 0,
-                          borderColor: isSelected ? colors.primary : 'transparent'
-                        }
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.timeBarFill,
-                          {
-                            height: `${Math.max(2, heightPct)}%`,
-                            backgroundColor: seconds > 0 ? colors.primary : 'transparent'
-                          }
-                        ]}
-                      />
-                    </View>
-                    <Text style={[styles.timeBarLabel, { color: colors.textMuted }]}>
-                      {tab === '7' ? dayLabel : day.slice(8)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+          {totalSeconds > 0 ? (
+            <TimeBarChart
+              timeBars={timeBars}
+              mode={tab}
+              days={timeDays}
+              selectedDate={selectedDate}
+              onSelectDate={(date) => {
+                if (date) {
+                  handleDatePress(date);
+                } else {
+                  setSelectedDate(null);
+                }
+              }}
+            />
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>⏱️</Text>
