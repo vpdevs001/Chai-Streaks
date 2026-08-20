@@ -50,10 +50,7 @@ export default function DraggableHabitList({
   useEffect(() => {
     const habitIds = habits.map((h) => h.id);
     setOrder((prev) => {
-      if (
-        prev.length === habitIds.length &&
-        prev.every((id, i) => id === habitIds[i])
-      ) {
+      if (prev.length === habitIds.length && prev.every((id, i) => id === habitIds[i])) {
         return prev;
       }
       return habitIds;
@@ -236,11 +233,7 @@ function DraggableHabitItem({
       };
     }
 
-    if (
-      activeId.value !== -1 &&
-      activeStartIndex.value !== -1 &&
-      hoverIndex.value !== -1
-    ) {
+    if (activeId.value !== -1 && activeStartIndex.value !== -1 && hoverIndex.value !== -1) {
       const fromIdx = activeStartIndex.value;
       const toIdx = hoverIndex.value;
       let offset = 0;
@@ -285,10 +278,7 @@ function DraggableHabitItem({
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View
-        style={[styles.itemWrapper, animatedStyle]}
-        onLayout={onLayoutFirstItem}
-      >
+      <Animated.View style={[styles.itemWrapper, animatedStyle]} onLayout={onLayoutFirstItem}>
         <HabitCard
           habit={habit}
           status={getHabitStatus(habit.id)}

@@ -16,13 +16,7 @@ export async function createDailyTask(
   const result = await db.runAsync(
     `INSERT INTO daily_tasks (user_id, habit_id, title, is_completed, date)
      VALUES (?, ?, ?, ?, ?)`,
-    [
-      input.user_id,
-      input.habit_id ?? null,
-      input.title,
-      input.is_completed ?? 0,
-      input.date
-    ]
+    [input.user_id, input.habit_id ?? null, input.title, input.is_completed ?? 0, input.date]
   );
 
   const task = await db.getFirstAsync<DailyTask>(`SELECT * FROM daily_tasks WHERE id = ?`, [
@@ -54,10 +48,7 @@ export async function getTodayTasks(db: SQLiteDatabase, userId: number): Promise
 // ─── Update ───────────────────────────────────────────────────────────────────
 
 /** Toggle a task's completion status. */
-export async function toggleDailyTask(
-  db: SQLiteDatabase,
-  taskId: number
-): Promise<DailyTask> {
+export async function toggleDailyTask(db: SQLiteDatabase, taskId: number): Promise<DailyTask> {
   const task = await db.getFirstAsync<DailyTask>(`SELECT * FROM daily_tasks WHERE id = ?`, [
     taskId
   ]);
@@ -90,9 +81,7 @@ export async function updateDailyTask(
   const { clause, values } = buildSetClause(input as Record<string, SQLiteBindValue | undefined>);
   await db.runAsync(`UPDATE daily_tasks SET ${clause} WHERE id = ?`, [...values, id]);
 
-  const updated = await db.getFirstAsync<DailyTask>(`SELECT * FROM daily_tasks WHERE id = ?`, [
-    id
-  ]);
+  const updated = await db.getFirstAsync<DailyTask>(`SELECT * FROM daily_tasks WHERE id = ?`, [id]);
   if (!updated) throw new Error(`updateDailyTask: task ${id} not found after update`);
   return updated;
 }

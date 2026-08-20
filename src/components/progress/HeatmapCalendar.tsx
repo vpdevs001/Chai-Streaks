@@ -104,10 +104,7 @@ export default function HeatmapCalendar({ data, weeks = 12, onDayPress }: Heatma
           {dayLabels.map((label, i) => (
             <Text
               key={i}
-              style={[
-                styles.dayLabel,
-                { color: colors.textMuted, height: DAY_SIZE + DAY_GAP }
-              ]}
+              style={[styles.dayLabel, { color: colors.textMuted, height: DAY_SIZE + DAY_GAP }]}
             >
               {i % 2 === 1 ? label : ''}
             </Text>

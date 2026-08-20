@@ -1,24 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  TextInput,
-  FlatList,
-  Keyboard
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, FlatList, Keyboard } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useHabits } from '../../hooks/useHabits';
 import { SPACING, RADII, TYPOGRAPHY } from '../../constants';
-import {
-  createDailyTask,
-  getTodayTasks,
-  toggleDailyTask,
-  deleteDailyTask
-} from '../../db';
+import { createDailyTask, getTodayTasks, toggleDailyTask, deleteDailyTask } from '../../db';
 import { todayString } from '../../utils/dateHelpers';
 import type { DailyTask } from '../../db/types';
 

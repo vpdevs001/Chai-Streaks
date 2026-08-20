@@ -419,7 +419,10 @@ export default function TimerScreen() {
           onPress={() => setShowStartModal(false)}
         >
           <View
-            style={[styles.modalBox, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            style={[
+              styles.modalBox,
+              { backgroundColor: colors.surface, borderColor: colors.border }
+            ]}
           >
             <Text style={[styles.modalTitle, { color: colors.text }]}>Start Timer</Text>
 
@@ -460,7 +463,9 @@ export default function TimerScreen() {
                   <Text
                     style={[
                       styles.habitChipText,
-                      { color: selectedHabitId === habit.id ? colors.primary : colors.textSecondary }
+                      {
+                        color: selectedHabitId === habit.id ? colors.primary : colors.textSecondary
+                      }
                     ]}
                     numberOfLines={1}
                   >

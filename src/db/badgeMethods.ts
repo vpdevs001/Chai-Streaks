@@ -19,57 +19,330 @@ export interface BadgeDefinition {
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ── Streak badges (account-level consecutive days with ≥1 completion) ──
-  { key: 'streak_3', emoji: '✨', title: 'Spark', description: '3-day streak', category: 'streak', threshold: 3 },
-  { key: 'streak_7', emoji: '🔥', title: 'Week Warrior', description: '7-day streak', category: 'streak', threshold: 7 },
-  { key: 'streak_14', emoji: '⚡', title: 'Fortnight Fighter', description: '14-day streak', category: 'streak', threshold: 14 },
-  { key: 'streak_30', emoji: '💫', title: 'Monthly Master', description: '30-day streak', category: 'streak', threshold: 30 },
-  { key: 'streak_60', emoji: '🌟', title: 'Sixty Strong', description: '60-day streak', category: 'streak', threshold: 60 },
-  { key: 'streak_90', emoji: '💥', title: 'Quarter Champion', description: '90-day streak', category: 'streak', threshold: 90 },
-  { key: 'streak_180', emoji: '🏆', title: 'Half Year Hero', description: '180-day streak', category: 'streak', threshold: 180 },
-  { key: 'streak_365', emoji: '👑', title: 'Year Legend', description: '365-day streak', category: 'streak', threshold: 365 },
+  {
+    key: 'streak_3',
+    emoji: '✨',
+    title: 'Spark',
+    description: '3-day streak',
+    category: 'streak',
+    threshold: 3
+  },
+  {
+    key: 'streak_7',
+    emoji: '🔥',
+    title: 'Week Warrior',
+    description: '7-day streak',
+    category: 'streak',
+    threshold: 7
+  },
+  {
+    key: 'streak_14',
+    emoji: '⚡',
+    title: 'Fortnight Fighter',
+    description: '14-day streak',
+    category: 'streak',
+    threshold: 14
+  },
+  {
+    key: 'streak_30',
+    emoji: '💫',
+    title: 'Monthly Master',
+    description: '30-day streak',
+    category: 'streak',
+    threshold: 30
+  },
+  {
+    key: 'streak_60',
+    emoji: '🌟',
+    title: 'Sixty Strong',
+    description: '60-day streak',
+    category: 'streak',
+    threshold: 60
+  },
+  {
+    key: 'streak_90',
+    emoji: '💥',
+    title: 'Quarter Champion',
+    description: '90-day streak',
+    category: 'streak',
+    threshold: 90
+  },
+  {
+    key: 'streak_180',
+    emoji: '🏆',
+    title: 'Half Year Hero',
+    description: '180-day streak',
+    category: 'streak',
+    threshold: 180
+  },
+  {
+    key: 'streak_365',
+    emoji: '👑',
+    title: 'Year Legend',
+    description: '365-day streak',
+    category: 'streak',
+    threshold: 365
+  },
 
   // ── Total completion badges ──
-  { key: 'completions_10', emoji: '🎯', title: 'Getting Started', description: '10 total completions', category: 'completions', threshold: 10 },
-  { key: 'completions_50', emoji: '🎪', title: 'Habit Builder', description: '50 total completions', category: 'completions', threshold: 50 },
-  { key: 'completions_100', emoji: '💯', title: 'Century Club', description: '100 total completions', category: 'completions', threshold: 100 },
-  { key: 'completions_250', emoji: '🚀', title: 'Consistency Pro', description: '250 total completions', category: 'completions', threshold: 250 },
-  { key: 'completions_500', emoji: '💎', title: 'Five Hundred', description: '500 total completions', category: 'completions', threshold: 500 },
-  { key: 'completions_1000', emoji: '🏅', title: 'Thousand Club', description: '1000 total completions', category: 'completions', threshold: 1000 },
+  {
+    key: 'completions_10',
+    emoji: '🎯',
+    title: 'Getting Started',
+    description: '10 total completions',
+    category: 'completions',
+    threshold: 10
+  },
+  {
+    key: 'completions_50',
+    emoji: '🎪',
+    title: 'Habit Builder',
+    description: '50 total completions',
+    category: 'completions',
+    threshold: 50
+  },
+  {
+    key: 'completions_100',
+    emoji: '💯',
+    title: 'Century Club',
+    description: '100 total completions',
+    category: 'completions',
+    threshold: 100
+  },
+  {
+    key: 'completions_250',
+    emoji: '🚀',
+    title: 'Consistency Pro',
+    description: '250 total completions',
+    category: 'completions',
+    threshold: 250
+  },
+  {
+    key: 'completions_500',
+    emoji: '💎',
+    title: 'Five Hundred',
+    description: '500 total completions',
+    category: 'completions',
+    threshold: 500
+  },
+  {
+    key: 'completions_1000',
+    emoji: '🏅',
+    title: 'Thousand Club',
+    description: '1000 total completions',
+    category: 'completions',
+    threshold: 1000
+  },
 
   // ── Habit count badges ──
-  { key: 'habits_1', emoji: '🌱', title: 'First Seed', description: 'Create your first habit', category: 'habits', threshold: 1 },
-  { key: 'habits_3', emoji: '🌿', title: 'Triple Threat', description: 'Track 3 habits', category: 'habits', threshold: 3 },
-  { key: 'habits_5', emoji: '🖐️', title: 'High Five', description: 'Track 5 habits', category: 'habits', threshold: 5 },
-  { key: 'habits_10', emoji: '🔟', title: 'Habit Collector', description: 'Track 10 habits', category: 'habits', threshold: 10 },
-  { key: 'habits_15', emoji: '📦', title: 'Habit Hoarder', description: 'Track 15 habits', category: 'habits', threshold: 15 },
-  { key: 'habits_20', emoji: '🎖️', title: 'Habit Master', description: 'Track 20 habits', category: 'habits', threshold: 20 },
+  {
+    key: 'habits_1',
+    emoji: '🌱',
+    title: 'First Seed',
+    description: 'Create your first habit',
+    category: 'habits',
+    threshold: 1
+  },
+  {
+    key: 'habits_3',
+    emoji: '🌿',
+    title: 'Triple Threat',
+    description: 'Track 3 habits',
+    category: 'habits',
+    threshold: 3
+  },
+  {
+    key: 'habits_5',
+    emoji: '🖐️',
+    title: 'High Five',
+    description: 'Track 5 habits',
+    category: 'habits',
+    threshold: 5
+  },
+  {
+    key: 'habits_10',
+    emoji: '🔟',
+    title: 'Habit Collector',
+    description: 'Track 10 habits',
+    category: 'habits',
+    threshold: 10
+  },
+  {
+    key: 'habits_15',
+    emoji: '📦',
+    title: 'Habit Hoarder',
+    description: 'Track 15 habits',
+    category: 'habits',
+    threshold: 15
+  },
+  {
+    key: 'habits_20',
+    emoji: '🎖️',
+    title: 'Habit Master',
+    description: 'Track 20 habits',
+    category: 'habits',
+    threshold: 20
+  },
 
   // ── Chai Score badges ──
-  { key: 'score_20', emoji: '🍵', title: 'First Sip', description: 'Chai Score reaches 20', category: 'score', threshold: 20 },
-  { key: 'score_40', emoji: '☕', title: 'Chai Learner', description: 'Chai Score reaches 40', category: 'score', threshold: 40 },
-  { key: 'score_60', emoji: '🫖', title: 'Chai Expert', description: 'Chai Score reaches 60', category: 'score', threshold: 60 },
-  { key: 'score_80', emoji: '🧉', title: 'Master Chai', description: 'Chai Score reaches 80', category: 'score', threshold: 80 },
-  { key: 'score_100', emoji: '🏺', title: 'Perfect Brew', description: 'Chai Score reaches 100', category: 'score', threshold: 100 },
+  {
+    key: 'score_20',
+    emoji: '🍵',
+    title: 'First Sip',
+    description: 'Chai Score reaches 20',
+    category: 'score',
+    threshold: 20
+  },
+  {
+    key: 'score_40',
+    emoji: '☕',
+    title: 'Chai Learner',
+    description: 'Chai Score reaches 40',
+    category: 'score',
+    threshold: 40
+  },
+  {
+    key: 'score_60',
+    emoji: '🫖',
+    title: 'Chai Expert',
+    description: 'Chai Score reaches 60',
+    category: 'score',
+    threshold: 60
+  },
+  {
+    key: 'score_80',
+    emoji: '🧉',
+    title: 'Master Chai',
+    description: 'Chai Score reaches 80',
+    category: 'score',
+    threshold: 80
+  },
+  {
+    key: 'score_100',
+    emoji: '🏺',
+    title: 'Perfect Brew',
+    description: 'Chai Score reaches 100',
+    category: 'score',
+    threshold: 100
+  },
 
   // ── Perfect day badges (all due habits completed) ──
-  { key: 'perfect_1', emoji: '⭐', title: 'Perfect Day', description: 'Complete all habits in a day', category: 'perfect', threshold: 1 },
-  { key: 'perfect_7', emoji: '🌟', title: 'Perfect Week', description: '7 perfect days', category: 'perfect', threshold: 7 },
-  { key: 'perfect_30', emoji: '💫', title: 'Perfect Month', description: '30 perfect days', category: 'perfect', threshold: 30 },
+  {
+    key: 'perfect_1',
+    emoji: '⭐',
+    title: 'Perfect Day',
+    description: 'Complete all habits in a day',
+    category: 'perfect',
+    threshold: 1
+  },
+  {
+    key: 'perfect_7',
+    emoji: '🌟',
+    title: 'Perfect Week',
+    description: '7 perfect days',
+    category: 'perfect',
+    threshold: 7
+  },
+  {
+    key: 'perfect_30',
+    emoji: '💫',
+    title: 'Perfect Month',
+    description: '30 perfect days',
+    category: 'perfect',
+    threshold: 30
+  },
 
   // ── Chai Scroll badges ──
-  { key: 'scrolls_1', emoji: '📜', title: 'First Scroll', description: 'Earn your first Chai Scroll', category: 'scrolls', threshold: 1 },
-  { key: 'scrolls_5', emoji: '📃', title: 'Scroll Collector', description: 'Earn 5 Chai Scrolls', category: 'scrolls', threshold: 5 },
-  { key: 'scrolls_10', emoji: '📄', title: 'Scroll Master', description: 'Earn 10 Chai Scrolls', category: 'scrolls', threshold: 10 },
+  {
+    key: 'scrolls_1',
+    emoji: '📜',
+    title: 'First Scroll',
+    description: 'Earn your first Chai Scroll',
+    category: 'scrolls',
+    threshold: 1
+  },
+  {
+    key: 'scrolls_5',
+    emoji: '📃',
+    title: 'Scroll Collector',
+    description: 'Earn 5 Chai Scrolls',
+    category: 'scrolls',
+    threshold: 5
+  },
+  {
+    key: 'scrolls_10',
+    emoji: '📄',
+    title: 'Scroll Master',
+    description: 'Earn 10 Chai Scrolls',
+    category: 'scrolls',
+    threshold: 10
+  },
 
   // ── Time tracking badges ──
-  { key: 'time_1h', emoji: '⏱️', title: 'First Hour', description: 'Track 1 hour total', category: 'time', threshold: 3600 },
-  { key: 'time_10h', emoji: '⏰', title: 'Time Apprentice', description: 'Track 10 hours total', category: 'time', threshold: 36000 },
-  { key: 'time_50h', emoji: '🕐', title: 'Time Master', description: 'Track 50 hours total', category: 'time', threshold: 180000 },
-  { key: 'time_100h', emoji: '🕰️', title: 'Time Lord', description: 'Track 100 hours total', category: 'time', threshold: 360000 },
-  { key: 'time_7d', emoji: '📅', title: 'Week Tracker', description: 'Track time 7 days in a row', category: 'time', threshold: 7 },
-  { key: 'time_30d', emoji: '🗓️', title: 'Month Tracker', description: 'Track time 30 days in a row', category: 'time', threshold: 30 },
-  { key: 'time_morning', emoji: '🌅', title: 'Early Bird', description: 'Track time before 9am', category: 'time', threshold: 1 },
-  { key: 'time_night', emoji: '🌙', title: 'Night Owl', description: 'Track time after 9pm', category: 'time', threshold: 1 },
+  {
+    key: 'time_1h',
+    emoji: '⏱️',
+    title: 'First Hour',
+    description: 'Track 1 hour total',
+    category: 'time',
+    threshold: 3600
+  },
+  {
+    key: 'time_10h',
+    emoji: '⏰',
+    title: 'Time Apprentice',
+    description: 'Track 10 hours total',
+    category: 'time',
+    threshold: 36000
+  },
+  {
+    key: 'time_50h',
+    emoji: '🕐',
+    title: 'Time Master',
+    description: 'Track 50 hours total',
+    category: 'time',
+    threshold: 180000
+  },
+  {
+    key: 'time_100h',
+    emoji: '🕰️',
+    title: 'Time Lord',
+    description: 'Track 100 hours total',
+    category: 'time',
+    threshold: 360000
+  },
+  {
+    key: 'time_7d',
+    emoji: '📅',
+    title: 'Week Tracker',
+    description: 'Track time 7 days in a row',
+    category: 'time',
+    threshold: 7
+  },
+  {
+    key: 'time_30d',
+    emoji: '🗓️',
+    title: 'Month Tracker',
+    description: 'Track time 30 days in a row',
+    category: 'time',
+    threshold: 30
+  },
+  {
+    key: 'time_morning',
+    emoji: '🌅',
+    title: 'Early Bird',
+    description: 'Track time before 9am',
+    category: 'time',
+    threshold: 1
+  },
+  {
+    key: 'time_night',
+    emoji: '🌙',
+    title: 'Night Owl',
+    description: 'Track time after 9pm',
+    category: 'time',
+    threshold: 1
+  }
 ];
 
 // ─── Badge evaluation ────────────────────────────────────────────────────────
@@ -208,10 +481,10 @@ export async function evaluateAndAwardBadges(
     }
 
     if (earned) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO user_badges (user_id, badge_key) VALUES (?, ?)`,
-        [userId, badge.key]
-      );
+      await db.runAsync(`INSERT OR IGNORE INTO user_badges (user_id, badge_key) VALUES (?, ?)`, [
+        userId,
+        badge.key
+      ]);
       newBadges.push(badge);
     }
   }

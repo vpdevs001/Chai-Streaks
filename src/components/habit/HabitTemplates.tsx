@@ -13,22 +13,118 @@ export interface HabitTemplate {
 }
 
 export const HABIT_TEMPLATES: HabitTemplate[] = [
-  { title: 'Drink Water', icon: '💧', color: '#3B82F6', category: 'health', description: 'Stay hydrated throughout the day' },
-  { title: 'Exercise', icon: '🏃', color: '#EF4444', category: 'health', description: 'Get moving for at least 30 minutes' },
-  { title: 'Read', icon: '📚', color: '#8B5CF6', category: 'learning', description: 'Read for 30 minutes' },
-  { title: 'Meditate', icon: '🧘', color: '#14B8A6', category: 'mindfulness', description: 'Practice mindfulness or meditation' },
-  { title: 'Sleep Early', icon: '😴', color: '#6366F1', category: 'health', description: 'Go to bed before 11pm' },
-  { title: 'Eat Healthy', icon: '🥗', color: '#22C55E', category: 'health', description: 'Have a nutritious meal' },
-  { title: 'Write Journal', icon: '✍️', color: '#F59E0B', category: 'mindfulness', description: 'Write down your thoughts' },
-  { title: 'Learn Something', icon: '🧠', color: '#EC4899', category: 'learning', description: 'Learn a new skill or topic' },
-  { title: 'No Social Media', icon: '📵', color: '#64748B', category: 'productivity', description: 'Stay off social media' },
-  { title: 'Stretch', icon: '🤸', color: '#F97316', category: 'health', description: 'Do stretching exercises' },
-  { title: 'Practice Music', icon: '🎵', color: '#A855F7', category: 'hobby', description: 'Practice an instrument or sing' },
-  { title: 'Clean Space', icon: '🧹', color: '#10B981', category: 'productivity', description: 'Tidy up your living space' },
-  { title: 'Walk Outside', icon: '🚶', color: '#06B6D4', category: 'health', description: 'Take a walk outdoors' },
-  { title: 'Gratitude', icon: '🙏', color: '#F43F5E', category: 'mindfulness', description: 'Write 3 things you\'re grateful for' },
-  { title: 'Code/Create', icon: '💻', color: '#0EA5E9', category: 'productivity', description: 'Work on a personal project' },
-  { title: 'Call Family', icon: '❤️', color: '#E11D48', category: 'social', description: 'Call or text a family member' },
+  {
+    title: 'Drink Water',
+    icon: '💧',
+    color: '#3B82F6',
+    category: 'health',
+    description: 'Stay hydrated throughout the day'
+  },
+  {
+    title: 'Exercise',
+    icon: '🏃',
+    color: '#EF4444',
+    category: 'health',
+    description: 'Get moving for at least 30 minutes'
+  },
+  {
+    title: 'Read',
+    icon: '📚',
+    color: '#8B5CF6',
+    category: 'learning',
+    description: 'Read for 30 minutes'
+  },
+  {
+    title: 'Meditate',
+    icon: '🧘',
+    color: '#14B8A6',
+    category: 'mindfulness',
+    description: 'Practice mindfulness or meditation'
+  },
+  {
+    title: 'Sleep Early',
+    icon: '😴',
+    color: '#6366F1',
+    category: 'health',
+    description: 'Go to bed before 11pm'
+  },
+  {
+    title: 'Eat Healthy',
+    icon: '🥗',
+    color: '#22C55E',
+    category: 'health',
+    description: 'Have a nutritious meal'
+  },
+  {
+    title: 'Write Journal',
+    icon: '✍️',
+    color: '#F59E0B',
+    category: 'mindfulness',
+    description: 'Write down your thoughts'
+  },
+  {
+    title: 'Learn Something',
+    icon: '🧠',
+    color: '#EC4899',
+    category: 'learning',
+    description: 'Learn a new skill or topic'
+  },
+  {
+    title: 'No Social Media',
+    icon: '📵',
+    color: '#64748B',
+    category: 'productivity',
+    description: 'Stay off social media'
+  },
+  {
+    title: 'Stretch',
+    icon: '🤸',
+    color: '#F97316',
+    category: 'health',
+    description: 'Do stretching exercises'
+  },
+  {
+    title: 'Practice Music',
+    icon: '🎵',
+    color: '#A855F7',
+    category: 'hobby',
+    description: 'Practice an instrument or sing'
+  },
+  {
+    title: 'Clean Space',
+    icon: '🧹',
+    color: '#10B981',
+    category: 'productivity',
+    description: 'Tidy up your living space'
+  },
+  {
+    title: 'Walk Outside',
+    icon: '🚶',
+    color: '#06B6D4',
+    category: 'health',
+    description: 'Take a walk outdoors'
+  },
+  {
+    title: 'Gratitude',
+    icon: '🙏',
+    color: '#F43F5E',
+    category: 'mindfulness',
+    description: "Write 3 things you're grateful for"
+  },
+  {
+    title: 'Code/Create',
+    icon: '💻',
+    color: '#0EA5E9',
+    category: 'productivity',
+    description: 'Work on a personal project'
+  },
+  {
+    title: 'Call Family',
+    icon: '❤️',
+    color: '#E11D48',
+    category: 'social',
+    description: 'Call or text a family member'
+  }
 ];
 
 const CATEGORIES = [
@@ -38,7 +134,7 @@ const CATEGORIES = [
   { key: 'productivity', label: 'Productivity' },
   { key: 'learning', label: 'Learning' },
   { key: 'hobby', label: 'Hobby' },
-  { key: 'social', label: 'Social' },
+  { key: 'social', label: 'Social' }
 ];
 
 export default function HabitTemplates({

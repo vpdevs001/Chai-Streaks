@@ -310,10 +310,7 @@ export async function deleteHabit(db: SQLiteDatabase, id: number): Promise<void>
  * Update the sort_order for a list of habits. The array index becomes the
  * new sort_order value.
  */
-export async function reorderHabits(
-  db: SQLiteDatabase,
-  habitIds: number[]
-): Promise<void> {
+export async function reorderHabits(db: SQLiteDatabase, habitIds: number[]): Promise<void> {
   await db.withExclusiveTransactionAsync(async (txn) => {
     const t = txn as unknown as SQLiteDatabase;
     for (let i = 0; i < habitIds.length; i++) {

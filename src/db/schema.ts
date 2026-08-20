@@ -223,9 +223,7 @@ const MIGRATIONS: { name: string; run: MigrationFn }[] = [
     name: 'v8_add_habit_category_sort',
     run: async (db) => {
       await db.execAsync(`ALTER TABLE habits ADD COLUMN category TEXT NOT NULL DEFAULT 'general';`);
-      await db.execAsync(
-        `ALTER TABLE habits ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;`
-      );
+      await db.execAsync(`ALTER TABLE habits ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;`);
     }
   },
   {

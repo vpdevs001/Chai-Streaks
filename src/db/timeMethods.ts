@@ -120,10 +120,9 @@ export async function getRecentTimeEntries(
 /** Stop a running time entry. Sets end_time and computes duration. */
 export async function stopTimeEntry(db: SQLiteDatabase, entryId: number): Promise<TimeEntry> {
   const now = new Date().toISOString();
-  const entry = await db.getFirstAsync<TimeEntry>(
-    `SELECT * FROM time_entries WHERE id = ?`,
-    [entryId]
-  );
+  const entry = await db.getFirstAsync<TimeEntry>(`SELECT * FROM time_entries WHERE id = ?`, [
+    entryId
+  ]);
   if (!entry) throw new Error(`stopTimeEntry: entry ${entryId} not found`);
   if (entry.end_time) throw new Error(`stopTimeEntry: entry ${entryId} is already stopped`);
 
@@ -131,15 +130,15 @@ export async function stopTimeEntry(db: SQLiteDatabase, entryId: number): Promis
   const endMs = new Date(now).getTime();
   const durationSeconds = Math.round((endMs - startMs) / 1000);
 
-  await db.runAsync(
-    `UPDATE time_entries SET end_time = ?, duration_seconds = ? WHERE id = ?`,
-    [now, durationSeconds, entryId]
-  );
+  await db.runAsync(`UPDATE time_entries SET end_time = ?, duration_seconds = ? WHERE id = ?`, [
+    now,
+    durationSeconds,
+    entryId
+  ]);
 
-  const updated = await db.getFirstAsync<TimeEntry>(
-    `SELECT * FROM time_entries WHERE id = ?`,
-    [entryId]
-  );
+  const updated = await db.getFirstAsync<TimeEntry>(`SELECT * FROM time_entries WHERE id = ?`, [
+    entryId
+  ]);
   if (!updated) throw new Error(`stopTimeEntry: failed to retrieve updated row`);
   return updated;
 }
@@ -151,10 +150,9 @@ export async function updateTimeEntry(
   input: UpdateTimeEntryInput
 ): Promise<TimeEntry> {
   if (Object.keys(input).length === 0) {
-    const existing = await db.getFirstAsync<TimeEntry>(
-      `SELECT * FROM time_entries WHERE id = ?`,
-      [id]
-    );
+    const existing = await db.getFirstAsync<TimeEntry>(`SELECT * FROM time_entries WHERE id = ?`, [
+      id
+    ]);
     if (!existing) throw new Error(`updateTimeEntry: entry ${id} not found`);
     return existing;
   }
@@ -162,10 +160,9 @@ export async function updateTimeEntry(
   const { clause, values } = buildSetClause(input as Record<string, SQLiteBindValue | undefined>);
   await db.runAsync(`UPDATE time_entries SET ${clause} WHERE id = ?`, [...values, id]);
 
-  const updated = await db.getFirstAsync<TimeEntry>(
-    `SELECT * FROM time_entries WHERE id = ?`,
-    [id]
-  );
+  const updated = await db.getFirstAsync<TimeEntry>(`SELECT * FROM time_entries WHERE id = ?`, [
+    id
+  ]);
   if (!updated) throw new Error(`updateTimeEntry: entry ${id} not found after update`);
   return updated;
 }

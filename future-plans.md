@@ -11,6 +11,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Massive engagement driver — users see and complete habits without opening the app.
 
 **Scope:**
+
 - Android: Glance-based widget with habit list + check buttons
 - iOS: WidgetKit extension with similar functionality
 - Deep-link tapping a habit opens the app to that habit
@@ -28,6 +29,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Trust + retention. Losing streaks is the #1 reason users abandon habit trackers.
 
 **Scope:**
+
 - Supabase (or Firebase) backend with anonymous auth
 - Sync: habits, history, badges, time entries, preferences
 - Conflict resolution: last-write-wins with vector clocks
@@ -45,6 +47,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Organic growth + user motivation through public accountability.
 
 **Scope:**
+
 - Generate shareable images (streak card, badge unlock, milestone)
 - "I've been consistent for 30 days! 🔥" with app branding
 - Share to Instagram Stories, Twitter/X, WhatsApp
@@ -62,6 +65,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Helps users optimize their habit schedule and fix failing habits.
 
 **Scope:**
+
 - Best time-of-day analysis per habit ("You complete 'Exercise' 80% more when reminded at 7am")
 - Failure pattern detection ("You tend to skip 'Read' on weekends")
 - Suggest habit stacking ("After 'Brush Teeth', add 'Floss'")
@@ -79,6 +83,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Gives users a guided journey instead of self-directed habit building.
 
 **Scope:**
+
 - Pre-built challenge packs (Morning Routine, Fitness, Mindfulness, Productivity)
 - Custom challenge creation with start/end dates
 - Daily check-ins with challenge-specific content
@@ -96,6 +101,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Reduces friction — habits like "Walk 10k steps" complete themselves.
 
 **Scope:**
+
 - HealthKit (iOS) / Health Connect (Android) integration
 - Auto-detect: steps, workouts, sleep, water intake, meditation minutes
 - Map health metrics to habits (e.g., "Exercise" → workout detected)
@@ -113,6 +119,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Power users want to analyze patterns and optimize.
 
 **Scope:**
+
 - Per-habit detailed analytics (best day, best time, streak history graph)
 - Correlation analysis ("You meditate more on days you exercise")
 - Yearly review (Spotify Wrapped-style annual summary)
@@ -130,6 +137,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Families share devices; parents want to track kids' habits.
 
 **Scope:**
+
 - Profile switcher with avatar
 - Per-profile habits, streaks, badges, settings
 - Parental controls (approve habit changes, view reports)
@@ -146,6 +154,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Gamification is proven to increase habit retention by 30-40%.
 
 **Scope:**
+
 - XP system with levels (earn XP for completions, streaks, perfect days)
 - Virtual pet/garden that grows with your streaks
 - Seasonal events (New Year challenge, Summer fitness)
@@ -163,6 +172,7 @@ This document outlines bigger features planned for future releases. These requir
 **Why:** Meet users where they are.
 
 **Scope:**
+
 - Calendar integration (Google/Apple Calendar — block time for habits)
 - Todoist/Notion sync (habits as recurring tasks)
 - Spotify integration (play focus playlist when timer starts)
@@ -173,4 +183,4 @@ This document outlines bigger features planned for future releases. These requir
 
 ---
 
-*Last updated: 2026-08-18*
+_Last updated: 2026-08-18_

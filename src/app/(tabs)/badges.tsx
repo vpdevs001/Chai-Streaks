@@ -55,13 +55,41 @@ export default function BadgesScreen() {
 
   // Group badges by category
   const categories = [
-    { key: 'streak', label: '🔥 Streaks', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'streak') },
-    { key: 'completions', label: '✅ Completions', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'completions') },
-    { key: 'habits', label: '🌱 Habits', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'habits') },
-    { key: 'score', label: '☕ Chai Score', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'score') },
-    { key: 'perfect', label: '⭐ Perfect Days', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'perfect') },
-    { key: 'scrolls', label: '📜 Chai Scrolls', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'scrolls') },
-    { key: 'time', label: '⏱️ Time Tracking', badges: BADGE_DEFINITIONS.filter((b) => b.category === 'time') }
+    {
+      key: 'streak',
+      label: '🔥 Streaks',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'streak')
+    },
+    {
+      key: 'completions',
+      label: '✅ Completions',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'completions')
+    },
+    {
+      key: 'habits',
+      label: '🌱 Habits',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'habits')
+    },
+    {
+      key: 'score',
+      label: '☕ Chai Score',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'score')
+    },
+    {
+      key: 'perfect',
+      label: '⭐ Perfect Days',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'perfect')
+    },
+    {
+      key: 'scrolls',
+      label: '📜 Chai Scrolls',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'scrolls')
+    },
+    {
+      key: 'time',
+      label: '⏱️ Time Tracking',
+      badges: BADGE_DEFINITIONS.filter((b) => b.category === 'time')
+    }
   ];
 
   const totalEarned = earnedBadges.length;
@@ -76,12 +104,23 @@ export default function BadgesScreen() {
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.primary} />
         }
       >
-        <ScreenHeader title="Badges" subtitle={`${totalEarned} of ${totalBadges} earned`} colors={colors} />
+        <ScreenHeader
+          title="Badges"
+          subtitle={`${totalEarned} of ${totalBadges} earned`}
+          colors={colors}
+        />
 
         {/* Progress bar */}
-        <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.progressCard,
+            { backgroundColor: colors.card, borderColor: colors.border }
+          ]}
+        >
           <View style={styles.progressHeader}>
-            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Collection Progress</Text>
+            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
+              Collection Progress
+            </Text>
             <Text style={[styles.progressValue, { color: colors.primary }]}>
               {Math.round((totalEarned / totalBadges) * 100)}%
             </Text>
@@ -124,7 +163,10 @@ export default function BadgesScreen() {
                     >
                       <Text style={styles.badgeEmoji}>{earned ? badge.emoji : '🔒'}</Text>
                       <Text
-                        style={[styles.badgeTitle, { color: earned ? colors.text : colors.textMuted }]}
+                        style={[
+                          styles.badgeTitle,
+                          { color: earned ? colors.text : colors.textMuted }
+                        ]}
                         numberOfLines={1}
                       >
                         {badge.title}

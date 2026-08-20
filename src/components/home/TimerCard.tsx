@@ -26,7 +26,16 @@ function formatDuration(seconds: number): string {
 export default function TimerCard() {
   const { colors } = useTheme();
   const { userId, habits } = useHabits();
-  const { runningEntry, elapsedSeconds, isRunning, startTimer, stopTimer, recentEntries, refreshEntries, removeEntry } = useTimer();
+  const {
+    runningEntry,
+    elapsedSeconds,
+    isRunning,
+    startTimer,
+    stopTimer,
+    recentEntries,
+    refreshEntries,
+    removeEntry
+  } = useTimer();
   const [showStartModal, setShowStartModal] = useState(false);
   const [taskName, setTaskName] = useState('');
   const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
@@ -90,7 +99,11 @@ export default function TimerCard() {
           <Pressable
             style={({ pressed }) => [
               styles.startBtn,
-              { backgroundColor: colors.primary + '18', borderColor: colors.primary + '44', opacity: pressed ? 0.7 : 1 }
+              {
+                backgroundColor: colors.primary + '18',
+                borderColor: colors.primary + '44',
+                opacity: pressed ? 0.7 : 1
+              }
             ]}
             onPress={() => setShowStartModal(true)}
           >
@@ -135,11 +148,19 @@ export default function TimerCard() {
           style={[styles.modalBackdrop, { backgroundColor: colors.overlay }]}
           onPress={() => setShowStartModal(false)}
         >
-          <View style={[styles.modalBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.modalBox,
+              { backgroundColor: colors.surface, borderColor: colors.border }
+            ]}
+          >
             <Text style={[styles.modalTitle, { color: colors.text }]}>Start Timer</Text>
 
             <TextInput
-              style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
+              style={[
+                styles.input,
+                { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }
+              ]}
               placeholder="What are you working on?"
               placeholderTextColor={colors.textMuted}
               value={taskName}
@@ -163,19 +184,18 @@ export default function TimerCard() {
                     {
                       backgroundColor:
                         selectedHabitId === habit.id ? colors.primary + '33' : colors.inputBg,
-                      borderColor:
-                        selectedHabitId === habit.id ? colors.primary : colors.border
+                      borderColor: selectedHabitId === habit.id ? colors.primary : colors.border
                     }
                   ]}
-                  onPress={() =>
-                    setSelectedHabitId(selectedHabitId === habit.id ? null : habit.id)
-                  }
+                  onPress={() => setSelectedHabitId(selectedHabitId === habit.id ? null : habit.id)}
                 >
                   <Text style={styles.habitChipEmoji}>{habit.icon ?? '✨'}</Text>
                   <Text
                     style={[
                       styles.habitChipText,
-                      { color: selectedHabitId === habit.id ? colors.primary : colors.textSecondary }
+                      {
+                        color: selectedHabitId === habit.id ? colors.primary : colors.textSecondary
+                      }
                     ]}
                     numberOfLines={1}
                   >
@@ -187,7 +207,10 @@ export default function TimerCard() {
 
             <View style={styles.modalActions}>
               <Pressable
-                style={[styles.modalBtn, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                style={[
+                  styles.modalBtn,
+                  { backgroundColor: colors.inputBg, borderColor: colors.border }
+                ]}
                 onPress={() => setShowStartModal(false)}
               >
                 <Text style={[styles.modalBtnText, { color: colors.textSecondary }]}>Cancel</Text>

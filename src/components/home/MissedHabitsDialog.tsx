@@ -134,7 +134,9 @@ export default function MissedHabitsDialog({
                           ]}
                           onPress={() => onMark(habit.id, 'skipped')}
                         >
-                          <Text style={[styles.actionText, { color: colors.danger }]}>✕ Failed</Text>
+                          <Text style={[styles.actionText, { color: colors.danger }]}>
+                            ✕ Failed
+                          </Text>
                         </Pressable>
                       </View>
                     )}

@@ -201,7 +201,12 @@ export default function ProgressScreen() {
         {/* Stats grid */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>All Time Stats</Text>
         <View style={styles.statsGrid}>
-          <BigStatCard emoji="🔥" label="Current Streak" value={`${accountStreak}d`} color="#EF4444" />
+          <BigStatCard
+            emoji="🔥"
+            label="Current Streak"
+            value={`${accountStreak}d`}
+            color="#EF4444"
+          />
           <BigStatCard
             emoji="🏆"
             label="Longest Streak"

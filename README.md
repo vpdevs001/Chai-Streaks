@@ -7,6 +7,7 @@ A premium, offline-first **habit tracking** mobile app built with Expo (React Na
 ## ✨ Features
 
 ### Core Habit Tracking
+
 - **Create & manage habits** — with custom emoji icon, accent color, category, and optional description
 - **Flexible frequency** — daily, weekly (pick days), or fully custom
 - **Check / Cross marking** — mark a habit as ✓ Complete _or_ ✕ Skipped; tap again to unmark
@@ -17,12 +18,14 @@ A premium, offline-first **habit tracking** mobile app built with Expo (React Na
 - **Habit notes** — add a note when marking a habit complete
 
 ### Streaks & Recovery
+
 - **Account-level streak** — consecutive days with at least one habit completed
 - **Chai Scrolls** — streak-recovery currency earned every 7-day block with 60%+ completion
 - **Streak freeze** — spend a Chai Scroll to recover a missed day
 - **Missed habit dialog** — first app open each day prompts you to verify yesterday's unmarked habits
 
 ### Progress & Analytics
+
 - **GitHub-style heatmap** — 12-week activity grid with month labels, 4-level colour ramp, and tap-for-details
 - **Progress charts** — 7-day and 30-day bar charts filtered from your account creation date
 - **Completion breakdown** — Done / Skipped / Frozen / Missed rates that sum to 100%
@@ -30,6 +33,7 @@ A premium, offline-first **habit tracking** mobile app built with Expo (React Na
 - **Per-habit analytics** — individual heatmap, streak history, and stats for each habit
 
 ### Time Tracking
+
 - **Background timer** — start/stop timer that persists across app restarts
 - **Task naming** — name what you're working on
 - **Habit linking** — optionally link time entries to habits
@@ -38,23 +42,27 @@ A premium, offline-first **habit tracking** mobile app built with Expo (React Na
 - **Time breakdown** — tap any day to see all time entries with start/end times
 
 ### Badges & Gamification
+
 - **38 badges** across 7 categories: Streaks, Completions, Habits, Chai Score, Perfect Days, Chai Scrolls, Time Tracking
 - **Unique emojis** — each badge has its own distinct emoji
 - **Collection progress** — track how many badges you've earned
 - **Auto-evaluation** — badges are checked and awarded automatically
 
 ### Daily Tasks
+
 - **Quick-add tasks** — one-off todo items scoped to today
 - **Habit linking** — optionally link tasks to habits
 - **Check off** — tap to complete, tap again to undo
 - **Auto-cleanup** — tasks reset at midnight
 
 ### Data Management
+
 - **Export data** — download all your data as JSON (copied to clipboard)
 - **Import data** — restore from a previous export
 - **Fully offline** — all data stored locally via SQLite
 
 ### Customization
+
 - **16 app themes** — Dark, Light, Forest, Ocean, Lavender, Sunset, Midnight Sky, Nord, AMOLED, Masala Chai, Sakura, Mocha, Cyberpunk, and more
 - **Quiet hours** — suppress notifications during sleep or focus hours
 - **Profile card** — custom name and avatar photo
@@ -224,14 +232,14 @@ eas build --profile production --platform android
 
 Six tables, all with cascading deletes from `users`:
 
-| Table           | Purpose                                                                 |
-| --------------- | ----------------------------------------------------------------------- |
-| `users`         | Profile (name, avatar URI, chai_scrolls)                                |
-| `habits`        | Habit definitions (title, icon, color, category, frequency, reminders)  |
-| `habit_history` | One row per (habit, date) — status: `completed` / `skipped` / `frozen`  |
-| `user_badges`   | Earned badges with timestamp and seen flag                              |
-| `time_entries`  | Time tracking entries with start/end times and duration                 |
-| `daily_tasks`   | Daily todo items scoped to a specific date                              |
+| Table           | Purpose                                                                |
+| --------------- | ---------------------------------------------------------------------- |
+| `users`         | Profile (name, avatar URI, chai_scrolls)                               |
+| `habits`        | Habit definitions (title, icon, color, category, frequency, reminders) |
+| `habit_history` | One row per (habit, date) — status: `completed` / `skipped` / `frozen` |
+| `user_badges`   | Earned badges with timestamp and seen flag                             |
+| `time_entries`  | Time tracking entries with start/end times and duration                |
+| `daily_tasks`   | Daily todo items scoped to a specific date                             |
 
 Migrations are tracked via SQLite `PRAGMA user_version`. To add a migration, push a new entry to the `MIGRATIONS` array in `src/db/schema.ts`.
 
